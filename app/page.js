@@ -5,6 +5,8 @@ import GelCard from '../components/GelCard';
 import ProductsPage from '../components/ProductsPage';
 import MissionPage from '../components/MissionPage';
 import AccountPage from '../components/AccountPage';
+import FAQPage from '../components/FAQPage';
+import CommunityPage from '../components/CommunityPage';
 import Nav from '../components/Nav';
 import CartButton from '../components/CartButton';
 import CartDrawer from '../components/CartDrawer';
@@ -12,6 +14,7 @@ import CheckoutModal from '../components/CheckoutModal';
 import AuthModal from '../components/AuthModal';
 import { CartProvider } from '../components/CartContext';
 import { AuthProvider, useAuth } from '../components/AuthContext';
+import { CommunityProvider } from '../components/CommunityContext';
 
 function PageContent() {
   const { user } = useAuth();
@@ -138,6 +141,23 @@ function PageContent() {
         {/* Mission */}
         {activeTab === 'mission' && <MissionPage />}
 
+        {/* FAQ */}
+        {activeTab === 'faq' && <FAQPage onGoToQuiz={() => setActiveTab('quiz')} />}
+
+        {/* Community */}
+        {activeTab === 'community' && (
+          <CommunityPage
+            onLoadFormula={(formula) => {
+              setQuizFormula(formula);
+              setActiveTab('quiz');
+              setTimeout(() => {
+                document.getElementById('quiz-gel-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 200);
+            }}
+            onSignIn={() => { setAuthMode('signin'); setAuthOpen(true); }}
+          />
+        )}
+
         {/* Account */}
         {activeTab === 'account' && (
           user
@@ -169,9 +189,11 @@ function PageContent() {
 export default function Home() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <PageContent />
-      </CartProvider>
+      <CommunityProvider>
+        <CartProvider>
+          <PageContent />
+        </CartProvider>
+      </CommunityProvider>
     </AuthProvider>
   );
 }
