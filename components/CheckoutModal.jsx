@@ -312,10 +312,21 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
     setStep(1);
     if (clientSecret) return; // already created
     try {
+      // Recalculate inline so we always have a fresh accurate total
+      const rates = { standard: 6.99, express: 14.99, overnight: 29.99 };
+      const sc    = subtotal >= 50 ? 0 : (rates[shipping.shippingMethod] ?? 6.99);
+      const t     = subtotal * TAX_RATE;
+      const amt   = subtotal + t + sc;
+
+      if (!amt || amt < 0.5) {
+        console.error('Cart is empty or total too low');
+        return;
+      }
+
       const res = await fetch('/api/stripe/payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: total, shipping }),
+        body: JSON.stringify({ amount: amt, shipping }),
       });
       const data = await res.json();
       if (data.error) { console.error(data.error); return; }
@@ -461,49 +472,46 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
                 />
               )}
 
-              {step === 1 && clientSecret && (
-                <Elements
-                  stripe={stripePromise}
-                  options={{
-                    clientSecret,
-                    appearance: {
-                      theme: 'stripe',
-                      variables: {
-                        colorPrimary: '#111827',
-                        borderRadius: '8px',
-                        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+              {/* Single persistent Elements wrapper covers both payment + review steps */}
+              {(step === 1 || step === 2) && (
+                clientSecret ? (
+                  <Elements
+                    stripe={stripePromise}
+                    options={{
+                      clientSecret,
+                      appearance: {
+                        theme: 'stripe',
+                        variables: {
+                          colorPrimary: '#111827',
+                          borderRadius: '8px',
+                          fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+                        },
                       },
-                    },
-                  }}
-                >
-                  <PaymentForm
-                    onBack={() => setStep(0)}
-                    onReady={handlePaymentReady}
-                  />
-                </Elements>
-              )}
-
-              {step === 1 && !clientSecret && (
-                <div className="py-12 text-center text-gray-400 text-sm">
-                  <span className="animate-spin inline-block mr-2">⏳</span>
-                  Setting up secure payment...
-                </div>
-              )}
-
-              {step === 2 && clientSecret && (
-                <Elements
-                  stripe={stripePromise}
-                  options={{ clientSecret }}
-                >
-                  <ReviewStep
-                    shipping={shipping}
-                    items={items}
-                    subtotal={subtotal}
-                    onBack={() => setStep(1)}
-                    onPlace={handlePlaceOrder}
-                    placing={placing}
-                  />
-                </Elements>
+                    }}
+                  >
+                    {step === 1 && (
+                      <PaymentForm
+                        onBack={() => setStep(0)}
+                        onReady={handlePaymentReady}
+                      />
+                    )}
+                    {step === 2 && (
+                      <ReviewStep
+                        shipping={shipping}
+                        items={items}
+                        subtotal={subtotal}
+                        onBack={() => setStep(1)}
+                        onPlace={handlePlaceOrder}
+                        placing={placing}
+                      />
+                    )}
+                  </Elements>
+                ) : (
+                  <div className="py-12 text-center text-gray-400 text-sm">
+                    <span className="animate-spin inline-block mr-2">⏳</span>
+                    Setting up secure payment...
+                  </div>
+                )
               )}
             </>
           )}
