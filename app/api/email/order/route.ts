@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
 
       <!-- CTA -->
       <div style="text-align:center;">
-        <a href="http://localhost:3000"
+        <a href="https://refuelgel.com"
           style="display:inline-block;background:#000000;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 32px;border-radius:12px;">
           View Your Account →
         </a>
