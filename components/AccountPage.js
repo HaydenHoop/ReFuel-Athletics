@@ -27,11 +27,14 @@ function EmptyState({ icon, title, description, action }) {
 function OrderHistory() {
   const { getMyOrders } = useAuth();
   const { addItem } = useCart();
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders]   = useState([]);
   const [expanded, setExpanded] = useState(null);
   const [reordered, setReordered] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { setOrders(getMyOrders()); }, [getMyOrders]);
+  useEffect(() => {
+    getMyOrders().then(data => { setOrders(data); setLoading(false); });
+  }, [getMyOrders]);
 
   const handleReorder = (order) => {
     order.items?.forEach(item => {
@@ -40,6 +43,10 @@ function OrderHistory() {
     setReordered(order.id);
     setTimeout(() => setReordered(null), 3000);
   };
+
+  if (loading) return (
+    <div className="text-center py-12 text-gray-400 text-sm">Loading orders...</div>
+  );
 
   if (orders.length === 0) return (
     <EmptyState icon="📦" title="No orders yet"
@@ -135,14 +142,19 @@ function OrderHistory() {
 function SavedFormulas({ onLoadFormula }) {
   const { getSavedFormulas, deleteFormula } = useAuth();
   const [formulas, setFormulas] = useState([]);
+  const [loading, setLoading]  = useState(true);
 
-  const refresh = () => setFormulas(getSavedFormulas());
+  const refresh = () => getSavedFormulas().then(data => { setFormulas(data); setLoading(false); });
   useEffect(() => { refresh(); }, []);
 
-  const handleDelete = (id) => {
-    deleteFormula(id);
+  const handleDelete = async (id) => {
+    await deleteFormula(id);
     refresh();
   };
+
+  if (loading) return (
+    <div className="text-center py-12 text-gray-400 text-sm">Loading formulas...</div>
+  );
 
   if (formulas.length === 0) return (
     <EmptyState icon="🧪" title="No saved formulas"

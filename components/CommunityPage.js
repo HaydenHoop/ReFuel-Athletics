@@ -93,12 +93,12 @@ function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
 
   const toggleTag = (tag) => setTags(t => t.includes(tag) ? t.filter(x => x !== tag) : [...t, tag]);
 
-  const handleShare = () => {
+  const handleShare = async () => {
     setError('');
     if (!name.trim()) { setError('Please give your formula a name.'); return; }
     if (description.length > 300) { setError('Description must be under 300 characters.'); return; }
     setLoading(true);
-    const result = shareFormula(user, {
+    const result = await shareFormula(user, {
       name, description, anonymous, tags: selectedTags,
       carbs, sodium, potassium, magnesium, caffeine, fructoseRatio, thickness, flavor,
     });
@@ -262,33 +262,37 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   const commentRef              = useRef(null);
 
   useEffect(() => {
-    setFormula(getFormula(formulaId));
+    getFormula(formulaId).then(setFormula);
   }, [formulaId, getFormula]);
 
-  if (!formula) return null;
+  if (!formula) return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="text-white text-sm">Loading...</div>
+    </div>
+  );
 
   const liked    = currentUser && formula.likes?.includes(currentUser.id);
   const isOwner  = currentUser && formula.authorId === currentUser.id;
   const author   = formula.anonymous ? 'Anonymous Athlete' : formula.authorName;
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!currentUser) return;
-    toggleLike(currentUser, formulaId);
-    setFormula(getFormula(formulaId));
+    await toggleLike(currentUser, formulaId);
+    getFormula(formulaId).then(setFormula);
   };
 
-  const handleComment = () => {
+  const handleComment = async () => {
     if (!comment.trim() || !currentUser) return;
     setSubmit(true);
-    addComment(currentUser, formulaId, comment);
+    await addComment(currentUser, formulaId, comment);
     setComment('');
-    setFormula(getFormula(formulaId));
+    getFormula(formulaId).then(setFormula);
     setSubmit(false);
   };
 
-  const handleDeleteComment = (commentId) => {
-    deleteComment(currentUser, formulaId, commentId);
-    setFormula(getFormula(formulaId));
+  const handleDeleteComment = async (commentId) => {
+    await deleteComment(currentUser, formulaId, commentId);
+    getFormula(formulaId).then(setFormula);
   };
 
   const handleCopyLink = () => {
@@ -298,9 +302,9 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!confirm('Delete this formula? This cannot be undone.')) return;
-    deleteFormula(currentUser, formulaId);
+    await deleteFormula(currentUser, formulaId);
     onClose();
   };
 
@@ -505,14 +509,18 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
   const [sharedId, setSharedId]       = useState(null);
   const [search, setSearch]           = useState('');
   const [filterTag, setFilterTag]     = useState('All');
+  const [feedLoading, setFeedLoading] = useState(true);
 
-  const refresh = () => setFormulas(getFormulas());
+  const refresh = () => {
+    setFeedLoading(true);
+    getFormulas().then(data => { setFormulas(data); setFeedLoading(false); });
+  };
 
   useEffect(() => { refresh(); }, []);
 
-  const handleLike = (formulaId) => {
+  const handleLike = async (formulaId) => {
     if (!user) { onSignIn?.(); return; }
-    toggleLike(user, formulaId);
+    await toggleLike(user, formulaId);
     refresh();
   };
 
@@ -591,7 +599,9 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
       </div>
 
       {/* Feed */}
-      {filtered.length === 0 ? (
+      {feedLoading ? (
+        <div className="text-center py-16 text-gray-400 text-sm">Loading formulas...</div>
+      ) : filtered.length === 0 ? (
         <div className="text-center py-16 bg-gray-50 rounded-2xl border border-gray-100">
           <div className="text-5xl mb-4">🧪</div>
           <p className="font-bold text-gray-700 mb-1">

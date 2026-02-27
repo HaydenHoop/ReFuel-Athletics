@@ -404,13 +404,12 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
   const tax = subtotal * TAX_RATE;
   const total = subtotal + tax + shippingCost;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     const id = Math.random().toString(36).slice(2, 10).toUpperCase();
     setOrderId(id);
-    // Save order to account if logged in
     if (user) {
-      saveOrder({
-        id: `ORD-${id}`,
+      await saveOrder({
+        id:           `ORD-${id}`,
         items,
         shipping,
         subtotal,
@@ -423,7 +422,6 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
     clearCart();
     setConfirmed(true);
 
-    // Send order confirmation email (fire and forget)
     fetch('/api/email/order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -431,12 +429,7 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
         orderId: id,
         firstName: shipping.firstName,
         email: shipping.email,
-        items,
-        shipping,
-        subtotal,
-        shippingCost,
-        tax,
-        total,
+        items, shipping, subtotal, shippingCost, tax, total,
       }),
     }).catch(err => console.warn('Order email failed:', err));
   };

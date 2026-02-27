@@ -107,18 +107,17 @@ export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) 
     setTimeout(() => setAdded(false), 2500);
   };
 
-  const handleSaveFormula = () => {
+  const handleSaveFormula = async () => {
     if (!user) { setSaveMsg('Sign in to save formulas.'); setTimeout(() => setSaveMsg(''), 3000); return; }
-    const result = saveFormula({
+    const result = await saveFormula({
       name: `${gelFlavor.split(' ')[0]} · ${carbs}g carbs${caffeine ? ` · ${caffeine}mg caffeine` : ''}`,
       carbs, sodium, caffeine, thickness, fructoseRatio, potassium, magnesium,
       flavor: gelFlavor, quizGenerated: !!quizFormula,
     });
-    if (result?.success !== false) {
-      setSaved(true);
-      setSaveMsg('Formula saved to your account!');
-      setTimeout(() => { setSaved(false); setSaveMsg(''); }, 3000);
-    }
+    if (result?.error) { setSaveMsg(result.error); setTimeout(() => setSaveMsg(''), 3000); return; }
+    setSaved(true);
+    setSaveMsg('Formula saved to your account!');
+    setTimeout(() => { setSaved(false); setSaveMsg(''); }, 3000);
   };
 
   return (

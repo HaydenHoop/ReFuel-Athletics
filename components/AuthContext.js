@@ -1,107 +1,56 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-
-// Simple but secure-enough client-side password hashing using Web Crypto API
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  // Use a consistent salt derived from the password + a site-specific secret
-  // In production this would be bcrypt on the server — this is the client-safe equivalent
-  const data = encoder.encode(password + 'refuel_athletics_salt_2024');
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function generateSessionToken() {
-  const arr = new Uint8Array(32);
-  crypto.getRandomValues(arr);
-  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-const SESSION_KEY = 'refuel_session';
-const USERS_KEY   = 'refuel_users';
-const ORDERS_KEY  = 'refuel_orders';
+import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null);   // { id, email, name, createdAt }
+  const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const getUsers = () => {
-    try { return JSON.parse(localStorage.getItem(USERS_KEY) || '{}'); }
-    catch { return {}; }
-  };
-  const saveUsers = (users) => localStorage.setItem(USERS_KEY, JSON.stringify(users));
-
-  const getOrders = () => {
-    try { return JSON.parse(localStorage.getItem(ORDERS_KEY) || '{}'); }
-    catch { return {}; }
-  };
-  const saveOrders = (orders) => localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-
-  // ── Restore session on mount ──────────────────────────────────────────────
+  // ── Restore session on mount + listen for auth changes ───────────────────
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY);
-      if (raw) {
-        const session = JSON.parse(raw);
-        // Check session hasn't expired (30-day TTL)
-        if (session.expiresAt > Date.now()) {
-          const users = getUsers();
-          const found = users[session.userId];
-          if (found) {
-            setUser({ id: found.id, email: found.email, name: found.name, createdAt: found.createdAt });
-          }
-        } else {
-          localStorage.removeItem(SESSION_KEY);
-        }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser({
+          id:        session.user.id,
+          email:     session.user.email,
+          name:      session.user.user_metadata?.name || session.user.email.split('@')[0],
+          createdAt: session.user.created_at,
+        });
       }
-    } catch {}
-    setLoading(false);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id:        session.user.id,
+          email:     session.user.email,
+          name:      session.user.user_metadata?.name || session.user.email.split('@')[0],
+          createdAt: session.user.created_at,
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // ── Sign up ───────────────────────────────────────────────────────────────
   const signUp = useCallback(async ({ name, email, password }) => {
-    const users = getUsers();
-    const emailKey = email.toLowerCase().trim();
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    });
+    if (error) return { error: error.message };
 
-    if (users[emailKey]) {
-      return { error: 'An account with this email already exists.' };
-    }
-    if (password.length < 8) {
-      return { error: 'Password must be at least 8 characters.' };
-    }
-
-    const hashed = await hashPassword(password);
-    const id = `user_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const newUser = {
-      id,
-      email: emailKey,
-      name: name.trim(),
-      passwordHash: hashed,
-      createdAt: new Date().toISOString(),
-    };
-
-    users[emailKey] = newUser;
-    saveUsers(users);
-
-    // Create session
-    const token = generateSessionToken();
-    localStorage.setItem(SESSION_KEY, JSON.stringify({
-      token,
-      userId: emailKey,
-      expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-    }));
-
-    setUser({ id, email: emailKey, name: newUser.name, createdAt: newUser.createdAt });
-
-    // Send welcome email (fire and forget — don't block signup if it fails)
     fetch('/api/email/welcome', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newUser.name, email: emailKey }),
+      body: JSON.stringify({ name, email }),
     }).catch(err => console.warn('Welcome email failed:', err));
 
     return { success: true };
@@ -109,109 +58,127 @@ export function AuthProvider({ children }) {
 
   // ── Sign in ───────────────────────────────────────────────────────────────
   const signIn = useCallback(async ({ email, password }) => {
-    const users = getUsers();
-    const emailKey = email.toLowerCase().trim();
-    const found = users[emailKey];
-
-    if (!found) {
-      return { error: 'No account found with that email.' };
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      if (error.message.includes('Invalid login')) return { error: 'Incorrect email or password.' };
+      return { error: error.message };
     }
-
-    const hashed = await hashPassword(password);
-    if (hashed !== found.passwordHash) {
-      return { error: 'Incorrect password.' };
-    }
-
-    const token = generateSessionToken();
-    localStorage.setItem(SESSION_KEY, JSON.stringify({
-      token,
-      userId: emailKey,
-      expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-    }));
-
-    setUser({ id: found.id, email: emailKey, name: found.name, createdAt: found.createdAt });
     return { success: true };
   }, []);
 
   // ── Sign out ──────────────────────────────────────────────────────────────
-  const signOut = useCallback(() => {
-    localStorage.removeItem(SESSION_KEY);
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
   }, []);
 
-  // ── Save order to account ─────────────────────────────────────────────────
-  const saveOrder = useCallback((orderData) => {
+  // ── Save order ────────────────────────────────────────────────────────────
+  const saveOrder = useCallback(async (orderData) => {
     if (!user) return;
-    const orders = getOrders();
-    if (!orders[user.email]) orders[user.email] = [];
-    orders[user.email].unshift({
-      id: `ORD-${Math.random().toString(36).slice(2, 10).toUpperCase()}`,
-      date: new Date().toISOString(),
-      ...orderData,
+    await supabase.from('orders').insert({
+      user_id:       user.id,
+      order_ref:     orderData.id,
+      items:         orderData.items,
+      shipping:      orderData.shipping,
+      subtotal:      orderData.subtotal,
+      shipping_cost: orderData.shippingCost,
+      tax:           orderData.tax,
+      total:         orderData.total,
+      status:        orderData.status || 'Confirmed',
     });
-    saveOrders(orders);
   }, [user]);
 
-  // ── Get orders for current user ───────────────────────────────────────────
-  const getMyOrders = useCallback(() => {
+  // ── Get orders ────────────────────────────────────────────────────────────
+  const getMyOrders = useCallback(async () => {
     if (!user) return [];
-    const orders = getOrders();
-    return orders[user.email] || [];
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return data.map(o => ({
+      id:           o.order_ref,
+      date:         o.created_at,
+      items:        o.items,
+      shipping:     o.shipping,
+      subtotal:     o.subtotal,
+      shippingCost: o.shipping_cost,
+      tax:          o.tax,
+      total:        o.total,
+      status:       o.status,
+    }));
   }, [user]);
 
   // ── Save formula ──────────────────────────────────────────────────────────
-  const saveFormula = useCallback((formula) => {
+  const saveFormula = useCallback(async (formula) => {
     if (!user) return { error: 'Sign in to save formulas.' };
-    const users = getUsers();
-    const u = users[user.email];
-    if (!u) return { error: 'User not found.' };
-    if (!u.savedFormulas) u.savedFormulas = [];
-    u.savedFormulas.unshift({
-      id: `formula_${Date.now()}`,
-      savedAt: new Date().toISOString(),
-      ...formula,
+    const { error } = await supabase.from('saved_formulas').insert({
+      user_id:        user.id,
+      name:           formula.name,
+      carbs:          formula.carbs,
+      sodium:         formula.sodium,
+      potassium:      formula.potassium,
+      magnesium:      formula.magnesium,
+      caffeine:       formula.caffeine,
+      fructose_ratio: formula.fructoseRatio,
+      thickness:      formula.thickness,
+      flavor:         formula.flavor,
+      quiz_generated: formula.quizGenerated || false,
     });
-    // Cap at 10 saved formulas
-    u.savedFormulas = u.savedFormulas.slice(0, 10);
-    users[user.email] = u;
-    saveUsers(users);
+    if (error) return { error: error.message };
     return { success: true };
   }, [user]);
 
-  const getSavedFormulas = useCallback(() => {
+  // ── Get saved formulas ────────────────────────────────────────────────────
+  const getSavedFormulas = useCallback(async () => {
     if (!user) return [];
-    const users = getUsers();
-    return users[user.email]?.savedFormulas || [];
+    const { data, error } = await supabase
+      .from('saved_formulas')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error) return [];
+    return data.map(f => ({
+      id:            f.id,
+      name:          f.name,
+      carbs:         f.carbs,
+      sodium:        f.sodium,
+      potassium:     f.potassium,
+      magnesium:     f.magnesium,
+      caffeine:      f.caffeine,
+      fructoseRatio: f.fructose_ratio,
+      thickness:     f.thickness,
+      flavor:        f.flavor,
+      quizGenerated: f.quiz_generated,
+      savedAt:       f.created_at,
+    }));
   }, [user]);
 
-  const deleteFormula = useCallback((formulaId) => {
+  // ── Delete saved formula ──────────────────────────────────────────────────
+  const deleteFormula = useCallback(async (formulaId) => {
     if (!user) return;
-    const users = getUsers();
-    const u = users[user.email];
-    if (!u) return;
-    u.savedFormulas = (u.savedFormulas || []).filter(f => f.id !== formulaId);
-    users[user.email] = u;
-    saveUsers(users);
+    await supabase.from('saved_formulas').delete().eq('id', formulaId).eq('user_id', user.id);
   }, [user]);
 
   // ── Update profile ────────────────────────────────────────────────────────
   const updateProfile = useCallback(async ({ name, currentPassword, newPassword }) => {
     if (!user) return { error: 'Not signed in.' };
-    const users = getUsers();
-    const u = users[user.email];
-    if (!u) return { error: 'User not found.' };
-
     if (newPassword) {
-      const currentHashed = await hashPassword(currentPassword);
-      if (currentHashed !== u.passwordHash) return { error: 'Current password is incorrect.' };
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email, password: currentPassword,
+      });
+      if (signInError) return { error: 'Current password is incorrect.' };
       if (newPassword.length < 8) return { error: 'New password must be at least 8 characters.' };
-      u.passwordHash = await hashPassword(newPassword);
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) return { error: updateError.message };
     }
-
-    if (name?.trim()) u.name = name.trim();
-    users[user.email] = u;
-    saveUsers(users);
-    setUser(prev => ({ ...prev, name: u.name }));
+    if (name?.trim()) {
+      const { error } = await supabase.auth.updateUser({ data: { name: name.trim() } });
+      if (error) return { error: error.message };
+      setUser(prev => ({ ...prev, name: name.trim() }));
+    }
     return { success: true };
   }, [user]);
 
