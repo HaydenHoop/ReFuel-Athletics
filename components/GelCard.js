@@ -39,6 +39,9 @@ export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) 
   const { user, saveFormula } = useAuth();
   const [saved, setSaved] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+  const [namePromptOpen, setNamePromptOpen] = useState(false);
+  const [formulaName, setFormulaName] = useState('');
+
   const [carbs, setCarbs] = useState(30);
   const [sodium, setSodium] = useState(250);
   const [caffeine, setCaffeine] = useState(0);
@@ -109,19 +112,56 @@ export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) 
 
   const handleSaveFormula = async () => {
     if (!user) { setSaveMsg('Sign in to save formulas.'); setTimeout(() => setSaveMsg(''), 3000); return; }
+    // Generate a default name then open the prompt
+    setFormulaName(`${gelFlavor.split(' ')[0]} · ${carbs}g carbs${caffeine ? ` · ${caffeine}mg caffeine` : ''}`);
+    setNamePromptOpen(true);
+  };
+
+  const handleConfirmSave = async () => {
     const result = await saveFormula({
-      name: `${gelFlavor.split(' ')[0]} · ${carbs}g carbs${caffeine ? ` · ${caffeine}mg caffeine` : ''}`,
+      name: formulaName.trim() || `${gelFlavor.split(' ')[0]} · ${carbs}g carbs`,
       carbs, sodium, caffeine, thickness, fructoseRatio, potassium, magnesium,
       flavor: gelFlavor, quizGenerated: !!quizFormula,
     });
+    setNamePromptOpen(false);
     if (result?.error) { setSaveMsg(result.error); setTimeout(() => setSaveMsg(''), 3000); return; }
     setSaved(true);
-    setSaveMsg('Formula saved to your account!');
+    setSaveMsg('Formula saved!');
     setTimeout(() => { setSaved(false); setSaveMsg(''); }, 3000);
   };
 
   return (
     <div className="relative bg-black text-white rounded-2xl overflow-hidden flex flex-col shadow-xl">
+
+      {/* Save name prompt overlay */}
+      {namePromptOpen && (
+        <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="bg-white text-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="font-extrabold text-lg mb-1">Name Your Formula</h3>
+            <p className="text-xs text-gray-400 mb-4">Give it a name you'll recognise later.</p>
+            <input
+              autoFocus
+              value={formulaName}
+              onChange={e => setFormulaName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleConfirmSave()}
+              maxLength={60}
+              placeholder="e.g. Race Day, Long Run Easy..."
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-black transition mb-1"
+            />
+            <p className="text-xs text-gray-400 text-right mb-4">{formulaName.length}/60</p>
+            <div className="flex gap-2">
+              <button onClick={() => setNamePromptOpen(false)}
+                className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button onClick={handleConfirmSave}
+                className="flex-1 bg-black text-white py-2.5 rounded-xl text-sm font-bold hover:bg-gray-800 transition">
+                Save →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Added badge */}
       {added && (
         <span className="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">

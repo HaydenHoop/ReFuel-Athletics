@@ -70,6 +70,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [emailSent, setEmailSent] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState('');
 
   const [name, setName]           = useState('');
   const [email, setEmail]         = useState('');
@@ -101,7 +103,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
       const result = await signUp({ name, email, password });
       setLoading(false);
       if (result.error) { setError(result.error); return; }
-      onClose();
+      setSentToEmail(email);
+      setEmailSent(true);
 
     } else {
       if (!validateEmail(email)) fe.email = 'Valid email required';
@@ -119,6 +122,45 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
   const handleKey = e => { if (e.key === 'Enter') handleSubmit(); };
 
   if (!isOpen) return null;
+
+  // ── Email confirmation screen ─────────────────────────────────────────────
+  if (emailSent) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-black text-white px-6 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-white rounded flex items-center justify-center">
+                <span className="text-black text-xs font-black">RF</span>
+              </div>
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-400">ReFuel Athletics</span>
+            </div>
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition">
+              ✕
+            </button>
+          </div>
+          <div className="px-6 py-10 text-center space-y-4">
+            <div className="text-6xl">📬</div>
+            <h2 className="text-2xl font-extrabold text-gray-900">Check your email</h2>
+            <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
+              We sent a confirmation link to{' '}
+              <span className="font-bold text-gray-900">{sentToEmail}</span>.
+              Click the link in that email to activate your account before signing in.
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 text-left">
+              <p className="font-bold mb-0.5">Don't see it?</p>
+              <p>Check your spam or junk folder. The email comes from <span className="font-semibold">noreply@mail.app.supabase.io</span>.</p>
+            </div>
+            <button onClick={onClose}
+              className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 transition mt-2">
+              Got it
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
