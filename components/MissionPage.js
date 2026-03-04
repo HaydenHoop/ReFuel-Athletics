@@ -2,22 +2,22 @@
 
 const MISSION_CONTENT = {
   tagline: "Built for athletes who refuse to compromise.",
-  intro: `Replace this with your opening mission statement. Tell visitors who ReFuel Athletics is, what you stand for, and why you started this company. This should be 2–3 sentences that immediately communicate your core purpose and the problem you're solving for endurance athletes.`,
+  intro: `ReFuel Athletics is a company built by athletes for athletes. Our mission is to give you the best nutrition for your workouts while reducing impacts on the environment. We refuse to force athletes to compromise between reducing waste and pushing your boundaries to the max.`,
   sections: [
     {
       eyebrow: "Why We Started",
       heading: "The Problem With Off-the-Shelf Gels",
-      body: `Replace this with your founding story. What frustrated you about existing products? What gap did you see in the market? This is where you connect emotionally with athletes who've experienced the same pain points — bad ingredients, upset stomachs mid-race, one-size-fits-all formulas that don't account for individual physiology.`,
+      body: `We are tired of the major gel companies selling overpriced single-use gels that end up on the trails or in a landfill. The plastic used for these gels is non-recyclable and harmful to animals that eat the sweet gel packets. Why should athletes who rely so much on nature be forced to destroy it in order to use the best products?`,
     },
     {
       eyebrow: "Our Approach",
       heading: "Precision Over Guesswork",
-      body: `Replace this with a description of your methodology. How do you approach formula design differently? What does the science say about personalized nutrition for endurance athletes? This section should build trust and credibility — explain the logic behind customizable carb ratios, sodium levels, and caffeine dosing.`,
+      body: `We believe that every athlete deserves their own formula. There is no one gel fits all when you are trying to push your body to the limit, thats why we are here to elevate your limit even further. Our formula builder is backed by science to provide performance & customization everywhere it counts.`,
     },
     {
       eyebrow: "Our Promise",
       heading: "Clean Ingredients. Real Performance.",
-      body: `Replace this with your product philosophy. What standards do you hold yourself to? What will you never put in a gel? This is your quality commitment — the non-negotiables that define your brand and differentiate you from competitors who cut corners.`,
+      body: `We use ingredients that you can trust. You cant reach your limits without confidence and what better way to gain confidence then knowing what you are putting in your body's engine is scientifically backed to work with you in order to break your records.`,
     },
   ],
   values: [
@@ -26,8 +26,8 @@ const MISSION_CONTENT = {
     { icon: "🌱", title: "Sustainable", description: "Reusable packets. Minimal waste. Maximum performance." },
     { icon: "🏆", title: "Race-Ready", description: "Tested by real athletes in real conditions." },
   ],
-  closingQuote: `"Replace this with a powerful quote from your founder or a core mantra that captures the spirit of ReFuel Athletics in one sentence."`,
-  closingAttribution: "— Your Name, Founder of ReFuel Athletics",
+  closingQuote: `"There should be no compromise between breaking records and eliminating waste."`,
+  closingAttribution: "— Hayden Hooper, Founder of ReFuel Athletics",
 };
 
 export default function MissionPage() {

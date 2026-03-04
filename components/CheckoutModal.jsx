@@ -163,7 +163,7 @@ function PaymentForm({ onBack, onReady }) {
         <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center text-white text-lg">🔒</div>
         <div>
           <p className="text-sm font-semibold text-gray-900">Secure Checkout · Powered by Stripe</p>
-          <p className="text-xs text-gray-400">256-bit SSL · PCI DSS Level 1 certified</p>
+          <p className="text-xs text-gray-400">PCI certified</p>
         </div>
       </div>
 
