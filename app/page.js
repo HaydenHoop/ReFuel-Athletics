@@ -20,20 +20,23 @@ function PageContent() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('products');
   const [quizFormula, setQuizFormula] = useState(null);
+  const [raceDayFormula, setRaceDayFormula] = useState(null);
   const [quizDone, setQuizDone] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState('signin');
 
   const handleQuizComplete = (result) => {
-    setQuizFormula(result);
+    const { raceDayFormula: rdf, ...baseFormula } = result;
+    setQuizFormula(baseFormula);
+    setRaceDayFormula(rdf || null);
     setQuizDone(true);
     setTimeout(() => {
       document.getElementById('quiz-gel-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 150);
   };
 
-  const resetQuiz = () => { setQuizFormula(null); setQuizDone(false); };
+  const resetQuiz = () => { setQuizFormula(null); setRaceDayFormula(null); setQuizDone(false); };
 
   const handleAccountClick = () => {
     if (user) {
@@ -84,6 +87,7 @@ function PageContent() {
           <ProductsPage
             onGoToQuiz={() => setActiveTab('quiz')}
             quizFormula={quizFormula}
+            raceDayFormula={raceDayFormula}
           />
         )}
 
@@ -133,7 +137,7 @@ function PageContent() {
                 <span className="w-6 h-6 bg-black text-white rounded-full text-xs font-black flex items-center justify-center">2</span>
                 Fine-Tune Your Formula & Add to Cart
               </h2>
-              <GelCard quizFormula={quizFormula} startOpen={true} />
+              <GelCard quizFormula={quizFormula} raceDayFormula={raceDayFormula} startOpen={true} />
             </div>
           </div>
         )}

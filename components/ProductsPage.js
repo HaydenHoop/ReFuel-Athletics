@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useCart } from './CartContext';
 import GelCard from './GelCard';
+import RaceDayCard from './RaceDayCard';
 
 const SPECS_PACKET = [
   { icon: '📐', label: 'Size', value: '~2× standard gel packet' },
@@ -21,7 +22,7 @@ function AddedBadge({ show }) {
 }
 
 // quizFormula — passed from page.js, updated whenever the quiz is completed
-export default function ProductsPage({ onGoToQuiz, quizFormula }) {
+export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }) {
   const { addItem } = useCart();
 
   const [packetQty, setPacketQty] = useState(1);
@@ -55,11 +56,14 @@ export default function ProductsPage({ onGoToQuiz, quizFormula }) {
         </p>
       </div>
 
-      {/* Product cards — equal height side by side */}
-      <div className="grid md:grid-cols-2 gap-6 items-start mb-8">
+      {/* Product cards */}
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 items-start mb-8">
 
-        {/* ── Gel card — all sliders, quiz-aware ── */}
-        <GelCard quizFormula={quizFormula} startOpen={false} onGoToQuiz={onGoToQuiz} />
+        {/* ── Training Gel card ── */}
+        <GelCard quizFormula={quizFormula} raceDayFormula={raceDayFormula} startOpen={false} onGoToQuiz={onGoToQuiz} />
+
+        {/* ── Race Day Gel card ── */}
+        <RaceDayCard quizRaceDayFormula={raceDayFormula} autoAdded={!!raceDayFormula} />
 
         {/* ── Reusable Packet card ── */}
         <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col shadow-xl">
