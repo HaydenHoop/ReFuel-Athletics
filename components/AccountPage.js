@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useCart } from './CartContext';
+import { useCommunity } from './CommunityContext';
 
 function SectionHeader({ title, subtitle }) {
   return (
@@ -139,10 +140,106 @@ function OrderHistory() {
 }
 
 // ── Saved Formulas ────────────────────────────────────────────────────────────
+// ── Share Formula Modal (inline, for saved formulas) ─────────────────────────
+function ShareFormulaModal({ isOpen, onClose, formula }) {
+  const { user } = useAuth();
+  const { shareFormula } = useCommunity();
+  const [name, setName]           = useState(formula?.name || '');
+  const [description, setDesc]    = useState('');
+  const [anonymous, setAnonymous] = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState('');
+  const [done, setDone]           = useState(false);
+
+  useEffect(() => { if (formula) setName(formula.name || ''); }, [formula]);
+
+  if (!isOpen) return null;
+
+  const handleShare = async () => {
+    setError('');
+    if (!name.trim()) { setError('Please give your formula a name.'); return; }
+    setLoading(true);
+    const result = await shareFormula(user, {
+      name, description, anonymous,
+      tags: [],
+      carbs:         formula.carbs,
+      sodium:        formula.sodium,
+      potassium:     formula.potassium ?? 100,
+      magnesium:     formula.magnesium ?? 20,
+      caffeine:      formula.caffeine ?? 0,
+      fructoseRatio: formula.fructoseRatio ?? 0.35,
+      thickness:     formula.thickness ?? 3,
+      flavor:        formula.flavor ?? 'Neutral / Unflavored',
+    });
+    setLoading(false);
+    if (result.error) { setError(result.error); return; }
+    setDone(true);
+    setTimeout(() => { setDone(false); onClose(); }, 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="bg-black text-white px-6 py-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-extrabold">Share to Community</h2>
+            <p className="text-xs text-gray-400">Let others try your formula</p>
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition text-white">
+            ✕
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          {done ? (
+            <div className="text-center py-6">
+              <div className="text-4xl mb-2">🎉</div>
+              <p className="font-bold text-gray-900">Shared to community!</p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-600 space-y-1 border border-gray-100">
+                <p className="font-bold text-gray-900 text-xs uppercase tracking-widest mb-2 text-gray-400">Formula Preview</p>
+                <div className="grid grid-cols-2 gap-1 text-xs">
+                  {formula?.carbs && <span>⚡ {formula.carbs}g carbs</span>}
+                  {formula?.sodium && <span>🧂 {formula.sodium}mg sodium</span>}
+                  {formula?.caffeine > 0 && <span>☕ {formula.caffeine}mg caffeine</span>}
+                  {formula?.flavor && <span>🍓 {formula.flavor.split(' ')[0]}</span>}
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Name</label>
+                <input value={name} onChange={e => setName(e.target.value)} maxLength={60}
+                  className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-black" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold uppercase tracking-wide text-gray-500">Description (optional)</label>
+                <textarea value={description} onChange={e => setDesc(e.target.value)}
+                  rows={3} maxLength={300} placeholder="What makes this formula special?"
+                  className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-black resize-none" />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={anonymous} onChange={e => setAnonymous(e.target.checked)} className="accent-black" />
+                <span className="text-sm text-gray-700">Post anonymously</span>
+              </label>
+              {error && <p className="text-xs text-red-500">{error}</p>}
+              <button onClick={handleShare} disabled={loading}
+                className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 transition disabled:opacity-50">
+                {loading ? 'Sharing...' : 'Share Formula →'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SavedFormulas({ onLoadFormula }) {
   const { getSavedFormulas, deleteFormula } = useAuth();
-  const [formulas, setFormulas] = useState([]);
-  const [loading, setLoading]  = useState(true);
+  const [formulas, setFormulas]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [shareTarget, setShareTarget] = useState(null);
 
   const refresh = () => getSavedFormulas().then(data => { setFormulas(data); setLoading(false); });
   useEffect(() => { refresh(); }, []);
@@ -162,47 +259,54 @@ function SavedFormulas({ onLoadFormula }) {
   );
 
   return (
-    <div className="space-y-3">
-      {formulas.map(f => (
-        <div key={f.id} className="bg-black text-white rounded-2xl p-5 flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <p className="font-bold text-white truncate">{f.name || 'Custom Formula'}</p>
-              {f.quizGenerated && (
-                <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                  Quiz
-                </span>
-              )}
+    <>
+      <ShareFormulaModal
+        isOpen={!!shareTarget}
+        onClose={() => setShareTarget(null)}
+        formula={shareTarget}
+      />
+      <div className="space-y-3">
+        {formulas.map(f => (
+          <div key={f.id} className="bg-black text-white rounded-2xl p-5 flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="font-bold text-white truncate">{f.name || 'Custom Formula'}</p>
+                {f.quizGenerated && (
+                  <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full font-medium flex-shrink-0">
+                    Quiz
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-400">
+                {f.carbs && <span>⚡ {f.carbs}g carbs</span>}
+                {f.sodium && <span>🧂 {f.sodium}mg sodium</span>}
+                {f.caffeine > 0 && <span>☕ {f.caffeine}mg caffeine</span>}
+                {f.flavor && <span>🍓 {f.flavor.split(' ')[0]}</span>}
+                {f.potassium && <span>⚗️ {f.potassium}mg potassium</span>}
+                {f.magnesium && <span>💊 {f.magnesium}mg magnesium</span>}
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                Saved {new Date(f.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </p>
             </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-400">
-              {f.carbs && <span>⚡ {f.carbs}g carbs</span>}
-              {f.sodium && <span>🧂 {f.sodium}mg sodium</span>}
-              {f.caffeine > 0 && <span>☕ {f.caffeine}mg caffeine</span>}
-              {f.flavor && <span>🍓 {f.flavor.split(' ')[0]}</span>}
-              {f.potassium && <span>⚗️ {f.potassium}mg potassium</span>}
-              {f.magnesium && <span>💊 {f.magnesium}mg magnesium</span>}
+            <div className="flex flex-col gap-2 flex-shrink-0">
+              <button onClick={() => onLoadFormula(f)}
+                className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-gray-100 transition">
+                Load →
+              </button>
+              <button onClick={() => setShareTarget(f)}
+                className="text-gray-400 text-xs px-3 py-1.5 rounded-lg hover:text-white border border-gray-700 hover:border-gray-400 transition">
+                Share
+              </button>
+              <button onClick={() => handleDelete(f.id)}
+                className="text-gray-600 text-xs px-3 py-1.5 rounded-lg hover:text-red-400 border border-gray-700 hover:border-red-400 transition">
+                Delete
+              </button>
             </div>
-            <p className="text-xs text-gray-600 mt-2">
-              Saved {new Date(f.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            </p>
           </div>
-          <div className="flex flex-col gap-2 flex-shrink-0">
-            <button
-              onClick={() => onLoadFormula(f)}
-              className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
-            >
-              Load →
-            </button>
-            <button
-              onClick={() => handleDelete(f.id)}
-              className="text-gray-600 text-xs px-3 py-1.5 rounded-lg hover:text-red-400 border border-gray-700 hover:border-red-400 transition"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 }
 
