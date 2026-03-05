@@ -22,6 +22,182 @@ function AddedBadge({ show }) {
 }
 
 // quizFormula — passed from page.js, updated whenever the quiz is completed
+
+// ── Bundle Builder ────────────────────────────────────────────────────────────
+const BUNDLES = [
+  {
+    id: 'starter',
+    name: 'Starter Kit',
+    tag: 'Most Popular',
+    tagColor: 'bg-black text-white',
+    description: 'Everything you need to ditch single-use gels.',
+    emoji: '⚡',
+    items: [
+      { label: '20 Training Gel pouches', qty: 20, unitPrice: 1.85, emoji: '🧪' },
+      { label: '1 Reusable Flask',        qty: 1,  unitPrice: 15,   emoji: '🧴' },
+    ],
+    highlightColor: 'border-black',
+    ctaColor: 'bg-black hover:bg-gray-800 text-white',
+  },
+  {
+    id: 'race',
+    name: 'Race Ready',
+    tag: 'Best Value',
+    tagColor: 'bg-amber-500 text-black',
+    description: 'Training gel + race day formula + flask. Show up prepared.',
+    emoji: '🏆',
+    items: [
+      { label: '20 Training Gel pouches',  qty: 20, unitPrice: 1.85, emoji: '🧪' },
+      { label: '5 Race Day Gel pouches',   qty: 5,  unitPrice: 2.30, emoji: '🏆' },
+      { label: '1 Reusable Flask',         qty: 1,  unitPrice: 15,   emoji: '🧴' },
+    ],
+    highlightColor: 'border-amber-400',
+    ctaColor: 'bg-amber-500 hover:bg-amber-400 text-black',
+  },
+  {
+    id: 'elite',
+    name: 'Elite Pack',
+    tag: 'Max Performance',
+    tagColor: 'bg-gray-800 text-white',
+    description: 'Full season supply. Two flasks, double the race day fuel.',
+    emoji: '🥇',
+    items: [
+      { label: '40 Training Gel pouches', qty: 40, unitPrice: 1.85, emoji: '🧪' },
+      { label: '10 Race Day Gel pouches', qty: 10, unitPrice: 2.30, emoji: '🏆' },
+      { label: '2 Reusable Flasks',       qty: 2,  unitPrice: 15,   emoji: '🧴' },
+    ],
+    highlightColor: 'border-gray-700',
+    ctaColor: 'bg-gray-900 hover:bg-gray-700 text-white',
+  },
+];
+
+const BUNDLE_DISCOUNT = { starter: 0.05, race: 0.10, elite: 0.15 };
+
+function BundleBuilder({ onGoToQuiz }) {
+  const { addItem } = useCart();
+  const [selected, setSelected] = useState('race');
+  const [added, setAdded]       = useState(false);
+  const [open, setOpen]         = useState(false);
+
+  const bundle   = BUNDLES.find(b => b.id === selected);
+  const retail   = bundle.items.reduce((sum, i) => sum + i.qty * i.unitPrice, 0);
+  const discount = BUNDLE_DISCOUNT[selected];
+  const price    = parseFloat((retail * (1 - discount)).toFixed(2));
+  const savings  = parseFloat((retail - price).toFixed(2));
+
+  const handleAdd = () => {
+    addItem({
+      id:       `bundle-${selected}-${Date.now()}`,
+      name:     `${bundle.name} Bundle`,
+      subtitle: bundle.items.map(i => `${i.qty}× ${i.label.split(' ').slice(-2).join(' ')}`).join(' · '),
+      emoji:    bundle.emoji,
+      price,
+      qty:      1,
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2500);
+  };
+
+  return (
+    <div className="mt-4">
+      {/* Collapsed toggle */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-900 to-black text-white rounded-2xl hover:from-gray-800 transition group"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-xl">📦</span>
+          <div className="text-left">
+            <p className="font-extrabold text-base">Bundle & Save</p>
+            <p className="text-gray-400 text-xs">Save up to 15% · 3 curated packs</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400 hidden sm:inline">
+            {open ? 'Close' : 'View bundles'}
+          </span>
+          <span className={`text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>▼</span>
+        </div>
+      </button>
+
+      {/* Expanded panel */}
+      {open && (
+        <div className="mt-2 bg-gray-950 border border-gray-800 rounded-2xl overflow-hidden">
+
+          {/* Tier selector */}
+          <div className="grid grid-cols-3 gap-0 border-b border-gray-800">
+            {BUNDLES.map(b => (
+              <button key={b.id} onClick={() => setSelected(b.id)}
+                className={`py-4 px-3 text-center transition-all border-b-2
+                  ${selected === b.id
+                    ? 'border-white bg-gray-900'
+                    : 'border-transparent hover:bg-gray-900/50'
+                  }`}>
+                <span className="text-xl block mb-1">{b.emoji}</span>
+                <p className={`text-xs font-bold ${selected === b.id ? 'text-white' : 'text-gray-500'}`}>{b.name}</p>
+                <span className={`inline-block mt-1 text-xs font-bold px-2 py-0.5 rounded-full ${b.tagColor}`}>
+                  {b.tag}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Bundle detail */}
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-extrabold text-white">{bundle.name}</h3>
+                <p className="text-gray-400 text-sm mt-0.5">{bundle.description}</p>
+              </div>
+              <div className="text-right flex-shrink-0 ml-4">
+                <p className="text-3xl font-black text-white">${price.toFixed(2)}</p>
+                <p className="text-xs text-gray-500 line-through">${retail.toFixed(2)}</p>
+                <span className="inline-block bg-green-500/20 text-green-400 text-xs font-bold px-2 py-0.5 rounded-full mt-1">
+                  Save ${savings.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* Items list */}
+            <div className="space-y-2 mb-6">
+              {bundle.items.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3">
+                  <span className="text-lg">{item.emoji}</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-white">{item.label}</p>
+                    <p className="text-xs text-gray-500">${item.unitPrice.toFixed(2)} each · ${(item.qty * item.unitPrice).toFixed(2)} total</p>
+                  </div>
+                  <span className="text-xs font-black text-gray-400 bg-gray-800 px-2 py-1 rounded-lg">×{item.qty}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Savings bar */}
+            <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 mb-5">
+              <span className="text-green-400 text-lg">💰</span>
+              <p className="text-sm text-green-300 font-medium">
+                You save <span className="font-black">${savings.toFixed(2)}</span> ({Math.round(discount * 100)}% off) vs buying separately
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={handleAdd}
+                className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition
+                  ${added ? 'bg-green-500 text-white' : bundle.ctaColor}`}>
+                {added ? '✓ Added to Cart!' : `Add ${bundle.name} Bundle — $${price.toFixed(2)}`}
+              </button>
+              <button onClick={() => { setOpen(false); onGoToQuiz?.(); }}
+                className="px-4 py-3.5 rounded-xl font-bold text-sm border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200 transition whitespace-nowrap">
+                Customize →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }) {
   const { addItem } = useCart();
 
@@ -157,19 +333,8 @@ export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }
         </div>
       </div>
 
-      {/* Bundle nudge */}
-      <div className="bg-gradient-to-r from-gray-900 to-black text-white rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <p className="font-extrabold text-lg">Better together</p>
-          <p className="text-gray-400 text-sm">Pair the reusable packet with your custom gel blend for a zero-waste race setup.</p>
-        </div>
-        <button
-          onClick={() => { onGoToQuiz && onGoToQuiz(); }}
-          className="flex-shrink-0 bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition text-sm whitespace-nowrap"
-        >
-          🎯 Personalize Your Formula →
-        </button>
-      </div>
+      {/* Bundle Builder */}
+      <BundleBuilder onGoToQuiz={onGoToQuiz} />
 
     </div>
   );
