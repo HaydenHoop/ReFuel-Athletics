@@ -76,15 +76,17 @@ export function AuthProvider({ children }) {
   const saveOrder = useCallback(async (orderData) => {
     if (!user) return;
     await supabase.from('orders').insert({
-      user_id:       user.id,
-      order_ref:     orderData.id,
-      items:         orderData.items,
-      shipping:      orderData.shipping,
-      subtotal:      orderData.subtotal,
-      shipping_cost: orderData.shippingCost,
-      tax:           orderData.tax,
-      total:         orderData.total,
-      status:        orderData.status || 'Confirmed',
+      user_id:          user.id,
+      order_ref:        orderData.id,
+      items:            orderData.items,
+      shipping:         orderData.shipping,
+      subtotal:         orderData.subtotal,
+      shipping_cost:    orderData.shippingCost,
+      tax:              orderData.tax,
+      total:            orderData.total,
+      status:           orderData.status || 'Confirmed',
+      is_subscription:  orderData.isSubscription || false,
+      sub_interval:     orderData.subInterval || null,
     });
   }, [user]);
 
@@ -98,15 +100,17 @@ export function AuthProvider({ children }) {
       .order('created_at', { ascending: false });
     if (error) return [];
     return data.map(o => ({
-      id:           o.order_ref,
-      date:         o.created_at,
-      items:        o.items,
-      shipping:     o.shipping,
-      subtotal:     o.subtotal,
-      shippingCost: o.shipping_cost,
-      tax:          o.tax,
-      total:        o.total,
-      status:       o.status,
+      id:             o.order_ref,
+      date:           o.created_at,
+      items:          o.items,
+      shipping:       o.shipping,
+      subtotal:       o.subtotal,
+      shippingCost:   o.shipping_cost,
+      tax:            o.tax,
+      total:          o.total,
+      status:         o.status,
+      isSubscription: o.is_subscription || false,
+      subInterval:    o.sub_interval || null,
     }));
   }, [user]);
 

@@ -60,7 +60,7 @@ function Input({ label, type = 'text', value, onChange, placeholder, maxLength, 
 }
 
 // ── Step 1: Shipping ──────────────────────────────────────────────────────────
-function ShippingStep({ data, onChange, onNext }) {
+function ShippingStep({ data, onChange, onNext, isSubscription, onToggleSubscription, subInterval, onChangeInterval }) {
   const [errors, setErrors] = useState({});
 
   const validate = () => {
@@ -130,6 +130,44 @@ function ShippingStep({ data, onChange, onNext }) {
         </div>
       </div>
 
+      {/* Subscription toggle */}
+      <div className="rounded-2xl border-2 border-gray-100 overflow-hidden mt-2">
+        <div className="flex items-center justify-between p-4 bg-gray-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-lg">🔄</div>
+            <div>
+              <p className="font-bold text-gray-900 text-sm">Subscribe & Save 10%</p>
+              <p className="text-xs text-gray-500">Auto-ship your formula on a schedule</p>
+            </div>
+          </div>
+          <button onClick={() => onToggleSubscription(s => !s)}
+            className={`relative w-12 h-6 rounded-full transition-colors duration-200 flex-shrink-0
+              ${isSubscription ? 'bg-black' : 'bg-gray-200'}`}>
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200
+              ${isSubscription ? 'translate-x-6' : 'translate-x-0'}`} />
+          </button>
+        </div>
+        {isSubscription && (
+          <div className="px-4 pb-4 pt-3 bg-white border-t border-gray-100">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Ship every</p>
+            <div className="flex gap-2">
+              {[2, 4, 6, 8].map(weeks => (
+                <button key={weeks} onClick={() => onChangeInterval(weeks)}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition
+                    ${subInterval === weeks
+                      ? 'bg-black text-white border-black'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-400'}`}>
+                  {weeks}w
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-xs text-green-700 font-medium">
+              ✓ 10% off every order · Cancel or pause anytime from your account
+            </div>
+          </div>
+        )}
+      </div>
+
       <button onClick={() => validate() && onNext()}
         className="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 transition mt-2">
         Continue to Payment →
@@ -163,7 +201,7 @@ function PaymentForm({ onBack, onReady }) {
         <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center text-white text-lg">🔒</div>
         <div>
           <p className="text-sm font-semibold text-gray-900">Secure Checkout · Powered by Stripe</p>
-          <p className="text-xs text-gray-400">PCI certified</p>
+          <p className="text-xs text-gray-400">256-bit SSL · PCI DSS Level 1 certified</p>
         </div>
       </div>
 
@@ -193,11 +231,12 @@ function PaymentForm({ onBack, onReady }) {
 }
 
 // ── Step 3: Review ────────────────────────────────────────────────────────────
-function ReviewStep({ shipping, items, subtotal, onBack, onPlace, placing }) {
+function ReviewStep({ shipping, items, subtotal, isSubscription, subInterval, onBack, onPlace, placing }) {
   const shippingRates = { standard: 6.99, express: 14.99, overnight: 29.99 };
   const shippingCost  = subtotal >= 50 ? 0 : (shippingRates[shipping.shippingMethod] ?? 6.99);
-  const tax   = subtotal * TAX_RATE;
-  const total = subtotal + tax + shippingCost;
+  const discount      = isSubscription ? subtotal * 0.10 : 0;
+  const tax   = (subtotal - discount) * TAX_RATE;
+  const total = subtotal - discount + tax + shippingCost;
 
   return (
     <div className="space-y-5">
@@ -224,8 +263,24 @@ function ReviewStep({ shipping, items, subtotal, onBack, onPlace, placing }) {
       </div>
 
       {/* Totals */}
+      {isSubscription && (
+        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span>🔄</span>
+            <div>
+              <p className="font-bold text-green-800">Subscribe & Save — ships every {subInterval} weeks</p>
+              <p className="text-xs text-green-600">Cancel or pause anytime from your account</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="border-t border-gray-100 pt-4 space-y-2 text-sm">
         <div className="flex justify-between text-gray-500"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+        {isSubscription && (
+          <div className="flex justify-between text-green-600 font-medium">
+            <span>Subscription discount (10%)</span><span>−${discount.toFixed(2)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-gray-500">
           <span>Shipping ({shipping.shippingMethod})</span>
           <span>{shippingCost === 0 ? <span className="text-green-600 font-medium">Free</span> : `$${shippingCost.toFixed(2)}`}</span>
@@ -294,6 +349,8 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
   const [stripeReady, setStripeReady]   = useState(null); // { stripe, elements }
   const [placing, setPlacing]           = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [isSubscription, setIsSubscription] = useState(false);
+  const [subInterval, setSubInterval]       = useState(4); // weeks
 
   const [shipping, setShipping] = useState({
     firstName: '', lastName: '', email: '', address: '',
@@ -304,8 +361,9 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
 
   const shippingRates = { standard: 6.99, express: 14.99, overnight: 29.99 };
   const shippingCost  = subtotal >= 50 ? 0 : (shippingRates[shipping.shippingMethod] ?? 6.99);
-  const tax   = subtotal * TAX_RATE;
-  const total = subtotal + tax + shippingCost;
+  const discount      = isSubscription ? subtotal * 0.10 : 0;
+  const tax   = (subtotal - discount) * TAX_RATE;
+  const total = subtotal - discount + tax + shippingCost;
 
   // Create PaymentIntent when moving to payment step
   const handleShippingNext = async () => {
@@ -315,8 +373,9 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
       // Recalculate inline so we always have a fresh accurate total
       const rates = { standard: 6.99, express: 14.99, overnight: 29.99 };
       const sc    = subtotal >= 50 ? 0 : (rates[shipping.shippingMethod] ?? 6.99);
-      const t     = subtotal * TAX_RATE;
-      const amt   = subtotal + t + sc;
+      const disc  = isSubscription ? subtotal * 0.10 : 0;
+      const t     = (subtotal - disc) * TAX_RATE;
+      const amt   = subtotal - disc + t + sc;
 
       if (!amt || amt < 0.5) {
         console.error('Cart is empty or total too low');
@@ -394,6 +453,8 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
           tax,
           total,
           status: 'Confirmed',
+          isSubscription,
+          subInterval: isSubscription ? subInterval : null,
         });
       }
 
@@ -424,6 +485,8 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
     setStripeReady(null);
     setPlacing(false);
     setPaymentError('');
+    setIsSubscription(false);
+    setSubInterval(4);
     onClose();
   };
 
@@ -469,6 +532,10 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
                   data={shipping}
                   onChange={updateShipping}
                   onNext={handleShippingNext}
+                  isSubscription={isSubscription}
+                  onToggleSubscription={setIsSubscription}
+                  subInterval={subInterval}
+                  onChangeInterval={setSubInterval}
                 />
               )}
 
@@ -500,6 +567,8 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
                         shipping={shipping}
                         items={items}
                         subtotal={subtotal}
+                        isSubscription={isSubscription}
+                        subInterval={subInterval}
                         onBack={() => setStep(1)}
                         onPlace={handlePlaceOrder}
                         placing={placing}

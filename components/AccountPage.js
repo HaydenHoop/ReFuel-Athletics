@@ -398,15 +398,125 @@ function ProfileSettings() {
   );
 }
 
+
+// ── Subscriptions ─────────────────────────────────────────────────────────────
+function Subscriptions() {
+  const { getMyOrders } = useAuth();
+  const [subs, setSubs]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [cancelled, setCancelled] = useState({});
+  const [paused, setPaused]       = useState({});
+
+  useEffect(() => {
+    getMyOrders().then(orders => {
+      const subOrders = orders.filter(o => o.isSubscription);
+      setSubs(subOrders);
+      setLoading(false);
+    });
+  }, [getMyOrders]);
+
+  if (loading) return (
+    <div className="text-center py-12 text-gray-400 text-sm">Loading subscriptions...</div>
+  );
+
+  if (subs.length === 0) return (
+    <EmptyState icon="🔄" title="No active subscriptions"
+      description="At checkout, choose Subscribe & Save to get 10% off and auto-ship your formula on a schedule."
+    />
+  );
+
+  return (
+    <div className="space-y-4">
+      {subs.map(sub => {
+        const isCancelled = cancelled[sub.id];
+        const isPaused    = paused[sub.id];
+        const nextDate    = new Date();
+        nextDate.setDate(nextDate.getDate() + (sub.subInterval ?? 4) * 7);
+
+        return (
+          <div key={sub.id} className={`border rounded-2xl overflow-hidden transition-opacity ${isCancelled ? 'opacity-50' : ''}`}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
+                  <span className="text-white text-sm">🔄</span>
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 text-sm">Every {sub.subInterval ?? 4} weeks</p>
+                  <p className="text-xs text-gray-400">Order {sub.id}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-extrabold text-gray-900">${sub.total?.toFixed(2)}</p>
+                <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full
+                  ${isCancelled ? 'bg-red-100 text-red-600' : isPaused ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                  {isCancelled ? 'Cancelled' : isPaused ? 'Paused' : 'Active'}
+                </span>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="px-5 py-4 space-y-2">
+              {sub.items?.map((item, i) => (
+                <div key={i} className="flex justify-between text-sm">
+                  <span className="text-gray-700">{item.emoji} {item.name} × {item.qty}</span>
+                  <span className="font-semibold text-gray-900">${(item.price * item.qty).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Next shipment */}
+            {!isCancelled && (
+              <div className="px-5 py-3 bg-blue-50 border-t border-blue-100 flex items-center gap-2">
+                <span className="text-blue-500 text-sm">📅</span>
+                <p className="text-xs text-blue-700 font-medium">
+                  {isPaused ? 'Paused — resume to schedule next shipment' : `Next shipment: ${nextDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`}
+                </p>
+              </div>
+            )}
+
+            {/* Actions */}
+            {!isCancelled && (
+              <div className="px-5 py-4 border-t border-gray-100 flex gap-2">
+                <button
+                  onClick={() => setPaused(p => ({ ...p, [sub.id]: !p[sub.id] }))}
+                  className="flex-1 border border-gray-200 text-gray-700 text-xs font-bold py-2.5 rounded-xl hover:bg-gray-50 transition">
+                  {isPaused ? '▶ Resume' : '⏸ Pause'}
+                </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Cancel this subscription? This cannot be undone.')) {
+                      setCancelled(c => ({ ...c, [sub.id]: true }));
+                    }
+                  }}
+                  className="flex-1 border border-red-200 text-red-500 text-xs font-bold py-2.5 rounded-xl hover:bg-red-50 transition">
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-xs text-gray-500 leading-relaxed">
+        <p className="font-bold text-gray-700 mb-1">About subscriptions</p>
+        Subscriptions auto-ship your exact formula on your chosen schedule with 10% off every order.
+        Changes take effect on the next shipment. To modify your formula or shipping address, cancel and reorder.
+      </div>
+    </div>
+  );
+}
+
 // ── Main AccountPage ──────────────────────────────────────────────────────────
 export default function AccountPage({ onLoadFormula }) {
   const { user } = useAuth();
   const [tab, setTab] = useState('orders');
 
   const TABS = [
-    { id: 'orders',   label: 'Order History', icon: '📦' },
-    { id: 'formulas', label: 'Saved Formulas', icon: '🧪' },
-    { id: 'profile',  label: 'Profile',        icon: '👤' },
+    { id: 'orders',        label: 'Orders',      icon: '📦' },
+    { id: 'subscriptions', label: 'Auto-Ship',   icon: '🔄' },
+    { id: 'formulas',      label: 'Formulas',    icon: '🧪' },
+    { id: 'profile',       label: 'Profile',     icon: '👤' },
   ];
 
   return (
@@ -436,6 +546,12 @@ export default function AccountPage({ onLoadFormula }) {
         <>
           <SectionHeader title="Order History" subtitle="All your past ReFuel orders in one place." />
           <OrderHistory />
+        </>
+      )}
+      {tab === 'subscriptions' && (
+        <>
+          <SectionHeader title="Auto-Ship Subscriptions" subtitle="Manage your recurring gel orders. 10% off every shipment." />
+          <Subscriptions />
         </>
       )}
       {tab === 'formulas' && (
