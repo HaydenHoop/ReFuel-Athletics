@@ -83,27 +83,27 @@ function buildReviewEmailHtml(params: {
 
 export async function POST(req: NextRequest) {
   try {
-    const { orderId, firstName, email, items, shippingMethod, reviewToken } = await req.json();
+    const body = await req.json();
+    const { orderId, firstName, email, items, shippingMethod, reviewToken, test: isTest } = body;
 
-    const delay = SHIPPING_DELAYS[shippingMethod] ?? SHIPPING_DELAYS.standard;
+    const delay   = isTest ? 0 : (SHIPPING_DELAYS[shippingMethod] ?? SHIPPING_DELAYS.standard);
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://refuelgel.com';
 
-    // Schedule the email after the shipping delay
-    // In production you'd use a queue (Inngest, Upstash, etc.)
-    // For now we use setTimeout — works on Vercel serverless if response is sent first
-    const sendDelayed = () => {
+    const sendMail = () =>
       transporter.sendMail({
         from:    `"ReFuel Athletics" <${process.env.GMAIL_USER}>`,
         to:      email,
-        subject: `How did your ReFuel order perform? ⭐`,
+        subject: isTest ? `[TEST] How did your ReFuel order perform? ⭐` : `How did your ReFuel order perform? ⭐`,
         html:    buildReviewEmailHtml({ firstName, orderId, items, reviewToken, baseUrl }),
       }).catch(err => console.error('Review email error:', err));
-    };
 
-    // Fire and forget after delay
-    setTimeout(sendDelayed, delay);
+    if (delay === 0) {
+      await sendMail();
+    } else {
+      setTimeout(sendMail, delay);
+    }
 
-    return NextResponse.json({ ok: true, scheduledIn: `${delay / 3600000}h` });
+    return NextResponse.json({ ok: true, scheduledIn: isTest ? 'immediate' : `${delay / 3600000}h` });
   } catch (err: any) {
     console.error('Review email route error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

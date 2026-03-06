@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+import DevPanel from './DevPanel';
 import { useAuth } from './AuthContext';
 import { useCart } from './CartContext';
 import { useCommunity } from './CommunityContext';
@@ -509,7 +510,7 @@ function Subscriptions() {
 
 // ── Main AccountPage ──────────────────────────────────────────────────────────
 export default function AccountPage({ onLoadFormula }) {
-  const { user } = useAuth();
+  const { user, isDev } = useAuth();
   const [tab, setTab] = useState('orders');
 
   const TABS = [
@@ -517,6 +518,7 @@ export default function AccountPage({ onLoadFormula }) {
     { id: 'subscriptions', label: 'Auto-Ship',   icon: '🔄' },
     { id: 'formulas',      label: 'Formulas',    icon: '🧪' },
     { id: 'profile',       label: 'Profile',     icon: '👤' },
+    ...(isDev ? [{ id: 'dev', label: 'Dev', icon: '⚡' }] : []),
   ];
 
   return (
@@ -535,7 +537,7 @@ export default function AccountPage({ onLoadFormula }) {
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold rounded-xl transition-all
-              ${tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              ${t.id === 'dev' ? (tab === t.id ? 'bg-red-500 text-white shadow-sm' : 'text-red-400 hover:text-red-600') : (tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}`}>
             <span>{t.icon}</span>
             <span className="hidden sm:inline">{t.label}</span>
           </button>
@@ -565,6 +567,9 @@ export default function AccountPage({ onLoadFormula }) {
           <SectionHeader title="Profile & Security" subtitle="Manage your account details and password." />
           <ProfileSettings />
         </>
+      )}
+      {tab === 'dev' && isDev && (
+        <DevPanel />
       )}
     </div>
   );

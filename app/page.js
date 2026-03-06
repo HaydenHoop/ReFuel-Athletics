@@ -101,7 +101,7 @@ function HomePage({ onNavigate }) {
 }
 
 function PageContent() {
-  const { user } = useAuth();
+  const { user, isDev } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [quizFormula, setQuizFormula] = useState(null);
   const [raceDayFormula, setRaceDayFormula] = useState(null);
@@ -141,6 +141,11 @@ function PageContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
+      {isDev && (
+        <div className="fixed top-0 left-1/2 -translate-x-1/2 z-[9999] bg-red-500 text-white text-xs font-black px-4 py-1 rounded-b-lg tracking-widest uppercase shadow-lg pointer-events-none">
+          ⚡ Dev Mode
+        </div>
+      )}
       <Nav
         activeTab={activeTab}
         onTabChange={setActiveTab}
