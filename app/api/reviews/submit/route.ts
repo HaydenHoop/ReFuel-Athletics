@@ -81,6 +81,7 @@ export async function GET(req: NextRequest) {
     .from('reviews')
     .select('id, rating, title, body, reviewer, created_at, product')
     .eq('approved', true)
+    .order('rating', { ascending: false })
     .order('created_at', { ascending: false });
 
   if (product) {
