@@ -102,14 +102,6 @@ export function ProductStars({ productKey, productName }) {
 }
 
 // ── Testimonials section ──────────────────────────────────────────────────────
-const PLACEHOLDERS = [
-  { id: 'p1', rating: 5, reviewer: 'Alex M.',   title: 'Finally a gel that works for me',  body: 'Dialed in my sodium and carbs to my exact sweat rate. Zero GI issues at mile 18 of my marathon.' },
-  { id: 'p2', rating: 5, reviewer: 'Sarah K.',  title: 'Race day game changer',             body: 'The race day formula with extra caffeine hit perfectly at hour 2. PR by 4 minutes at Boston.' },
-  { id: 'p3', rating: 5, reviewer: 'Jordan T.', title: 'No more single-use waste',          body: 'I can refill the flask and customize every batch. The reusable packet is bomber quality.' },
-  { id: 'p4', rating: 5, reviewer: 'Chris R.',  title: 'Perfect for ultras',                body: 'Thicker consistency and lower fructose keeps my stomach happy on 50 milers. Nothing else comes close.' },
-  { id: 'p5', rating: 5, reviewer: 'Maya L.',   title: 'Quiz nailed my formula first try',  body: 'Took the quiz, got my formula, used it in training for 3 weeks. Already on my 4th batch.' },
-];
-
 export function Testimonials() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -121,50 +113,41 @@ export function Testimonials() {
       .catch(() => setLoading(false));
   }, []);
 
-  const display       = reviews.length > 0 ? reviews : PLACEHOLDERS;
-  const isPlaceholder = !loading && reviews.length === 0;
-
   return (
     <div className="w-full max-w-4xl mx-auto mt-12">
-
-      {/* Bold centered header */}
       <div className="text-center mb-8">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">From the community</p>
         <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">Testimonials</h2>
-        {isPlaceholder && (
-          <p className="text-sm text-gray-400 mt-2 italic">
-            Sample reviews — be the first to leave yours after your order arrives
-          </p>
-        )}
       </div>
 
       {loading ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(5)].map((_, i) => <div key={i} className="bg-gray-100 animate-pulse rounded-2xl h-40" />)}
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-gray-100 animate-pulse rounded-2xl h-40" />
+          ))}
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="text-center py-12 bg-white border border-dashed border-gray-200 rounded-2xl">
+          <p className="text-4xl mb-3">⭐</p>
+          <p className="font-bold text-gray-900 mb-1">No testimonials yet</p>
+          <p className="text-sm text-gray-400">Reviews will appear here after customers leave feedback</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {display.map(r => (
+          {reviews.map(r => (
             <div key={r.id}
               className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow">
-
-              {/* Stars */}
               <Stars rating={r.rating ?? 5} size="sm" />
-
-              {/* Title */}
               {r.title && (
                 <p className="font-extrabold text-gray-900 text-base mt-3 leading-snug">{r.title}</p>
               )}
-
-              {/* Quote */}
               <p className="text-gray-500 text-sm mt-2 leading-relaxed flex-1">"{r.body}"</p>
-
-              {/* Reviewer */}
               <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
                 <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                  {r.reviewer?.[0] ?? 'A'}
+                  {r.reviewer?.[0]?.toUpperCase() ?? 'A'}
                 </div>
                 <p className="text-xs font-semibold text-gray-700">{r.reviewer}</p>
+                <span className="text-xs bg-green-100 text-green-700 font-bold px-1.5 py-0.5 rounded-full ml-auto">✓ Verified</span>
               </div>
             </div>
           ))}

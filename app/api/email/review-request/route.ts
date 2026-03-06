@@ -89,6 +89,20 @@ export async function POST(req: NextRequest) {
     const delay   = isTest ? 0 : (SHIPPING_DELAYS[shippingMethod] ?? SHIPPING_DELAYS.standard);
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://refuelgel.com';
 
+    // Always ensure token exists in DB before sending the email
+    // This is a safety net in case the separate /api/reviews/token call failed
+    const { createClient } = await import('@supabase/supabase-js');
+    const adminSupa = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+    // upsert so it doesn't error if already saved
+    await adminSupa.from('review_tokens').upsert(
+      { token: reviewToken, order_ref: orderId, used: false },
+      { onConflict: 'token', ignoreDuplicates: true }
+    );
+
     const sendMail = () =>
       transporter.sendMail({
         from:    `"ReFuel Athletics" <${process.env.GMAIL_USER}>`,

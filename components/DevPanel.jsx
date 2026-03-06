@@ -249,16 +249,25 @@ function ReviewManager() {
   const handleAdd = async () => {
     if (!newBody.trim()) return;
     setSaving(true);
-    await supabase.from('reviews').insert({
-      order_ref: 'DEV-ADDED',
-      token:     `dev-${Date.now()}`,
-      rating:    newRating,
-      title:     newTitle.trim() || null,
-      body:      newBody.trim(),
-      reviewer:  newReviewer.trim() || 'Verified Athlete',
-      product:   newProduct,
-      approved:  true,
-    });
+    try {
+      const res = await fetch('/api/reviews/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token:    `dev-${Date.now()}`,
+          orderId:  'DEV-ADDED',
+          rating:   newRating,
+          title:    newTitle.trim() || null,
+          body:     newBody.trim(),
+          reviewer: newReviewer.trim() || 'Verified Athlete',
+          product:  newProduct,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) { alert('Error: ' + data.error); }
+    } catch (e) {
+      alert('Failed to add review: ' + e.message);
+    }
     setSaving(false);
     setAdding(false);
     setNewRating(5); setNewReviewer(''); setNewTitle(''); setNewBody('');

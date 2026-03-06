@@ -65,11 +65,11 @@ function ReviewForm() {
   };
 
   if (done) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center">
         <div className="text-6xl mb-4">🏅</div>
         <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Thanks for your review!</h2>
-        <p className="text-gray-500 mb-6">Your feedback helps other athletes find their perfect formula.</p>
+        <p className="text-gray-800 mb-6">Your feedback helps other athletes find their perfect formula.</p>
         <a href="https://refuelgel.com"
           className="inline-block bg-black text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 transition">
           Back to ReFuel →
@@ -79,7 +79,7 @@ function ReviewForm() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden">
 
         {/* Header */}
@@ -92,18 +92,18 @@ function ReviewForm() {
         <div className="p-8 space-y-6">
           {/* Star rating */}
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-gray-400 block mb-3">
+            <label className="text-xs font-bold uppercase tracking-widest text-gray-600 block mb-3">
               Your Rating *
             </label>
             <StarPicker value={rating} onChange={setRating} />
             {rating > 0 && (
-              <p className="text-sm font-semibold text-gray-700 mt-2">{STAR_LABELS[rating]}</p>
+              <p className="text-sm font-semibold text-gray-900 mt-2">{STAR_LABELS[rating]}</p>
             )}
           </div>
 
           {/* Title */}
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-gray-400 block mb-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-gray-600 block mb-2">
               Review Title
             </label>
             <input
@@ -111,13 +111,13 @@ function ReviewForm() {
               onChange={e => setTitle(e.target.value)}
               maxLength={80}
               placeholder="e.g. Perfect for my marathon training"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-black transition"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-black transition text-gray-900 placeholder:text-gray-400"
             />
           </div>
 
           {/* Body */}
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-gray-400 block mb-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-gray-600 block mb-2">
               Your Review
             </label>
             <textarea
@@ -126,14 +126,14 @@ function ReviewForm() {
               maxLength={600}
               rows={4}
               placeholder="How did the formula perform? Any tips for other athletes?"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-black transition resize-none"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-black transition resize-none text-gray-900 placeholder:text-gray-400"
             />
-            <p className="text-xs text-gray-400 mt-1 text-right">{body.length}/600</p>
+            <p className="text-xs text-gray-500 mt-1 text-right">{body.length}/600</p>
           </div>
 
           {/* Name */}
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-gray-400 block mb-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-gray-600 block mb-2">
               Your Name
             </label>
             <input
@@ -142,11 +142,11 @@ function ReviewForm() {
               maxLength={50}
               placeholder="First name or nickname"
               disabled={anonymous}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-black transition disabled:opacity-40 disabled:bg-gray-50"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm outline-none focus:border-black transition disabled:opacity-40 disabled:bg-gray-50 text-gray-900 placeholder:text-gray-400"
             />
             <label className="flex items-center gap-2 mt-2 cursor-pointer">
               <input type="checkbox" checked={anonymous} onChange={e => setAnonymous(e.target.checked)} className="accent-black" />
-              <span className="text-sm text-gray-500">Post anonymously</span>
+              <span className="text-sm text-gray-700">Post anonymously</span>
             </label>
           </div>
 
