@@ -84,8 +84,7 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false });
 
   if (product) {
-    // Match exact product OR reviews with null product (older reviews before column existed)
-    query = query.or(`product.eq.${product},product.is.null`);
+    query = query.eq('product', product);
   }
 
   if (topFive) {
@@ -97,5 +96,5 @@ export async function GET(req: NextRequest) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ reviews: data ?? [] });
+  return NextResponse.json({ reviews: data ?? [], debug: { product, topFive, count: data?.length ?? 0 } });
 }
