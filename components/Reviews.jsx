@@ -17,9 +17,9 @@ function ReviewsModal({ isOpen, onClose, reviews, summary, productName }) {
   if (!isOpen) return null;
   const withText = reviews.filter(r => r.body);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">{productName}</p>
             <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export function Testimonials() {
       </div>
 
       {loading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-gray-100 animate-pulse rounded-2xl h-40" />
           ))}
@@ -133,7 +133,7 @@ export function Testimonials() {
           <p className="text-sm text-gray-400">Reviews will appear here after customers leave feedback</p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {reviews.map(r => (
             <div key={r.id}
               className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow">

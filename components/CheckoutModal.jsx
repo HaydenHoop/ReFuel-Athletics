@@ -78,14 +78,14 @@ function ShippingStep({ data, onChange, onNext, isSubscription, onToggleSubscrip
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input label="First Name" value={data.firstName} onChange={v => onChange('firstName', v)} required error={errors.firstName} />
         <Input label="Last Name" value={data.lastName} onChange={v => onChange('lastName', v)} required error={errors.lastName} />
       </div>
       <Input label="Email" type="email" value={data.email} onChange={v => onChange('email', v)} placeholder="you@example.com" required error={errors.email} />
       <Input label="Address" value={data.address} onChange={v => onChange('address', v)} placeholder="123 Main St" required error={errors.address} />
       <Input label="City" value={data.city} onChange={v => onChange('city', v)} required error={errors.city} />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">State *</label>
           <select
@@ -216,7 +216,7 @@ function PaymentForm({ onBack, onReady }) {
 
       <div className="flex gap-3 pt-1">
         <button onClick={onBack}
-          className="flex-shrink-0 border border-gray-200 text-gray-700 px-5 py-3.5 rounded-xl font-bold hover:bg-gray-50 transition">
+          className="flex-shrink-0 border border-gray-200 text-gray-700 px-4 py-3.5 rounded-xl font-bold hover:bg-gray-50 transition text-sm">
           ← Back
         </button>
         <button onClick={handleSubmit} disabled={!stripe || loading}
@@ -293,7 +293,7 @@ function ReviewStep({ shipping, items, subtotal, isSubscription, subInterval, on
 
       <div className="flex gap-3 pt-1">
         <button onClick={onBack}
-          className="flex-shrink-0 border border-gray-200 text-gray-700 px-5 py-3.5 rounded-xl font-bold hover:bg-gray-50 transition">
+          className="flex-shrink-0 border border-gray-200 text-gray-700 px-4 py-3.5 rounded-xl font-bold hover:bg-gray-50 transition text-sm">
           ← Back
         </button>
         <button onClick={onPlace} disabled={placing}
@@ -518,11 +518,11 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-2">
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-5 sm:pt-6 pb-2">
           <div>
             <h2 className="text-xl font-extrabold text-gray-900">Checkout</h2>
             <p className="text-xs text-gray-400">ReFuel Athletics</p>
@@ -533,7 +533,7 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
           </button>
         </div>
 
-        <div className="px-6 pb-6">
+        <div className="px-4 sm:px-6 pb-6">
           {confirmed ? (
             <Confirmation
               shipping={shipping}

@@ -121,7 +121,7 @@ function RaceDayQuizModal({ isOpen, onClose, baseFormula, onComplete }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div className="bg-gray-950 border border-amber-500/30 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-amber-500/20 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-amber-500/20 flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-amber-400">Race Day Optimizer</p>
             <h2 className="text-lg font-extrabold text-white mt-0.5">Dial In Your Race Formula</h2>
@@ -132,7 +132,7 @@ function RaceDayQuizModal({ isOpen, onClose, baseFormula, onComplete }) {
           </button>
         </div>
 
-        <div className="px-6 py-6">
+        <div className="px-4 sm:px-6 py-4 sm:py-6">
           {/* Progress */}
           <div className="w-full bg-gray-800 rounded-full h-1.5 mb-5">
             <div className="bg-amber-400 h-1.5 rounded-full transition-all duration-500"
@@ -206,7 +206,7 @@ function ShareToComModal({ isOpen, onClose, formula }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="bg-black text-white px-6 py-5 flex items-center justify-between">
+        <div className="bg-black text-white px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-extrabold">Share to Community</h2>
             <p className="text-xs text-gray-400">Post your race day formula</p>
@@ -216,7 +216,7 @@ function ShareToComModal({ isOpen, onClose, formula }) {
             ✕
           </button>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4">
           {done ? (
             <div className="text-center py-6">
               <div className="text-4xl mb-2">🎉</div>
@@ -367,7 +367,7 @@ export default function RaceDayCard({ quizRaceDayFormula, autoAdded = false }) {
           </span>
         )}
 
-        <div className="p-8 pb-4 flex flex-col">
+        <div className="p-4 sm:p-8 pb-4 flex flex-col">
           {/* Header */}
           <div className="flex items-start justify-between mb-2">
             <div>
@@ -379,7 +379,7 @@ export default function RaceDayCard({ quizRaceDayFormula, autoAdded = false }) {
           <ProductStars productKey="raceday" productName="Race Day Gel" />
             </div>
             <div className="text-right">
-              <p className="text-3xl font-extrabold text-white">${unitPrice.toFixed(2)}</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-white">${unitPrice.toFixed(2)}</p>
               <p className="text-amber-400/70 text-xs">per pouch</p>
             </div>
           </div>
@@ -402,7 +402,7 @@ export default function RaceDayCard({ quizRaceDayFormula, autoAdded = false }) {
           </button>
 
           {/* Key stats */}
-          <div className="grid grid-cols-3 gap-3 mb-5">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
             {[
               { label: 'Carbs',    value: `${carbs}g`,     sub: 'per pouch' },
               { label: 'Sodium',   value: `${sodium}mg`,   sub: 'electrolyte' },
@@ -471,7 +471,7 @@ export default function RaceDayCard({ quizRaceDayFormula, autoAdded = false }) {
         </div>
 
         {/* Footer */}
-        <div className="p-6 pt-2 mt-auto space-y-2">
+        <div className="p-4 sm:p-6 pt-2 mt-auto space-y-2">
           <button onClick={handleAdd}
             className={`w-full py-3.5 rounded-xl font-bold text-base transition
               ${added ? 'bg-green-500 text-white' : 'bg-amber-500 hover:bg-amber-400 text-black'}`}>

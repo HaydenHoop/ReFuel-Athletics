@@ -31,7 +31,7 @@ function HomePage({ onNavigate }) {
     <div className="w-full max-w-4xl mx-auto">
 
       {/* Hero — matches the image */}
-      <div className="relative rounded-3xl overflow-hidden bg-black text-white mb-8 min-h-[420px] flex flex-col justify-between p-10 md:p-14">
+      <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-black text-white mb-6 sm:mb-8 min-h-[340px] sm:min-h-[420px] flex flex-col justify-between p-6 sm:p-10 md:p-14">
         {/* Subtle grid texture */}
         <div className="absolute inset-0 opacity-10 pointer-events-none"
           style={{
@@ -44,7 +44,7 @@ function HomePage({ onNavigate }) {
         <div className="relative z-10">
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-gray-400 mb-8">Our Mission</p>
           <h1
-            className="text-5xl md:text-7xl font-extrabold leading-tight mb-8 max-w-2xl"
+            className="text-3xl sm:text-5xl md:text-7xl font-extrabold leading-tight mb-6 sm:mb-8 max-w-2xl"
             style={{ fontFamily: "'Georgia', serif", letterSpacing: '-0.02em' }}
           >
             Built for athletes who refuse to compromise.
@@ -59,7 +59,7 @@ function HomePage({ onNavigate }) {
       </div>
 
       {/* Navigation buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
         {NAV_BUTTONS.map(btn => (
           <button
             key={btn.id}
@@ -80,7 +80,7 @@ function HomePage({ onNavigate }) {
         {/* Shop CTA — full width, prominent */}
         <button
           onClick={() => onNavigate('products')}
-          className="sm:col-span-2 lg:col-span-3 flex items-center justify-between p-5 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all group"
+          className="col-span-2 lg:col-span-3 flex items-center justify-between p-4 sm:p-5 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all group"
         >
           <div className="flex items-center gap-4">
             <div className="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center text-xl">📦</div>
@@ -167,7 +167,7 @@ function PageContent() {
         defaultMode={authMode}
       />
 
-      <main className="flex flex-col items-center px-4 py-12">
+      <main className="flex flex-col items-center px-3 sm:px-4 py-6 sm:py-12">
 
         {/* Home / Landing */}
         {activeTab === 'home' && (

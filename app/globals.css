@@ -51,3 +51,38 @@ input[type='range']::-moz-range-thumb {
   cursor: pointer;
   border: 2px solid white;
 }
+
+/* ── Mobile optimizations ───────────────────────────────────────────────── */
+
+/* Hide scrollbar on scroll containers (tab bars, etc.) */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prevent body scroll behind modals on iOS */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Bottom tab bar safe area (notched iPhones) */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Prevent text size inflation on iOS */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Better tap targets on mobile */
+@media (max-width: 1024px) {
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

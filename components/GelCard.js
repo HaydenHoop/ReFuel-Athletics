@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { ProductStars } from './Reviews';
 import { useCart } from './CartContext';
 import { useAuth } from './AuthContext';
 
@@ -137,7 +136,7 @@ export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) 
       {/* Save name prompt overlay */}
       {namePromptOpen && (
         <div className="absolute inset-0 z-20 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
-          <div className="bg-white text-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+          <div className="bg-white text-gray-900 rounded-2xl p-5 w-full max-w-sm shadow-2xl mx-4">
             <h3 className="font-extrabold text-lg mb-1">Name Your Formula</h3>
             <p className="text-xs text-gray-400 mb-4">Give it a name you'll recognise later.</p>
             <input
@@ -177,16 +176,15 @@ export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) 
         </div>
       )}
 
-      <div className="p-8 pb-4 flex flex-col">
+      <div className="p-4 sm:p-8 pb-4 flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3 gap-2">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Consumable</span>
-            <h2 className="text-2xl font-extrabold mt-1">Custom Gel Powder</h2>
-                <ProductStars productKey="gel" productName="Custom Gel Powder" />
+            <h2 className="text-xl sm:text-2xl font-extrabold mt-1">Custom Gel Powder</h2>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-extrabold">${unitPrice.toFixed(2)}</p>
+            <p className="text-2xl sm:text-3xl font-extrabold">${unitPrice.toFixed(2)}</p>
             <p className="text-gray-500 text-xs">per pouch</p>
           </div>
         </div>
@@ -198,10 +196,10 @@ export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) 
         {/* Flavor */}
         <div className="mb-4">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Flavor</p>
-          <div className="grid grid-cols-5 gap-1.5">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
             {FLAVORS.map(f => (
               <button key={f.id} onClick={() => setGelFlavor(f.label)} title={f.label}
-                className={`flex flex-col items-center py-2 rounded-lg border transition-all
+                className={`flex flex-col items-center py-1.5 sm:py-2 rounded-lg border transition-all
                   ${gelFlavor === f.label ? 'border-white bg-white/10' : 'border-gray-700 hover:border-gray-500'}`}>
                 <span className="text-lg">{f.emoji}</span>
                 <span className="text-gray-400 mt-0.5" style={{ fontSize: '9px' }}>{f.label.split(' ')[0]}</span>
@@ -213,7 +211,7 @@ export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) 
         {/* Pouch quantity */}
         <div className="mb-4">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Pouches</p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <button onClick={() => setGelQty(q => Math.max(5, q - 5))}
               className="w-8 h-8 rounded-full border border-gray-700 font-bold hover:border-white transition flex items-center justify-center text-sm">−</button>
             <span className="text-xl font-bold w-8 text-center">{gelQty}</span>
@@ -224,7 +222,7 @@ export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) 
         </div>
 
         {/* Live formula summary — always visible */}
-        <div className="bg-gray-900 rounded-xl p-3 mb-4 text-xs text-gray-300 grid grid-cols-2 gap-1.5">
+        <div className="bg-gray-900 rounded-xl p-3 mb-4 text-xs text-gray-300 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
           <span>⚡ {carbs}g carbs ({maltodextrin}g + {fructose}g)</span>
           <span>🧂 {sodium}mg sodium</span>
           <span>⚗️ {potassium}mg potassium</span>
@@ -256,7 +254,7 @@ export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) 
         {/* Toggle: Customize Formula */}
         <button
           onClick={() => setFormulaOpen(o => !o)}
-          className="w-full border border-gray-700 text-gray-400 py-2.5 rounded-xl font-medium text-sm hover:border-gray-400 hover:text-white transition flex items-center justify-center gap-2"
+          className="w-full border border-gray-700 text-gray-400 py-3 rounded-xl font-bold text-sm hover:border-gray-400 hover:text-white transition flex items-center justify-center gap-2"
         >
           {formulaOpen ? '▲ Hide Formula Builder' : '▼ Customize Formula'}
         </button>
@@ -309,9 +307,9 @@ export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) 
       </div>
 
       {/* Footer */}
-      <div className="p-6 pt-2 space-y-2">
+      <div className="p-4 sm:p-6 pt-2 space-y-2">
         <button onClick={handleAdd}
-          className={`w-full py-3.5 rounded-xl font-bold text-base transition
+          className={`w-full py-4 rounded-xl font-bold text-base transition
             ${added ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-gray-100'}`}>
           {added ? '✓ Added to Cart!' : `Add to Cart — ${gelQty} pouches · $${gelPrice.toFixed(2)}`}
         </button>

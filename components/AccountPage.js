@@ -180,7 +180,7 @@ function ShareFormulaModal({ isOpen, onClose, formula }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md overflow-hidden">
         <div className="bg-black text-white px-6 py-5 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-extrabold">Share to Community</h2>
@@ -522,21 +522,21 @@ export default function AccountPage({ onLoadFormula }) {
   ];
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto px-3 sm:px-0">
 
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">My Account</p>
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
           Hey, {user?.name?.split(' ')[0]} 👋
         </h1>
       </div>
 
       {/* Sub-tabs */}
-      <div className="flex gap-2 mb-8 bg-gray-100 p-1 rounded-2xl">
+      <div className="flex gap-1 sm:gap-2 mb-6 sm:mb-8 bg-gray-100 p-1 rounded-2xl overflow-x-auto scrollbar-none">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold rounded-xl transition-all
+            className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all whitespace-nowrap min-w-0
               ${t.id === 'dev' ? (tab === t.id ? 'bg-red-500 text-white shadow-sm' : 'text-red-400 hover:text-red-600') : (tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}`}>
             <span>{t.icon}</span>
             <span className="hidden sm:inline">{t.label}</span>

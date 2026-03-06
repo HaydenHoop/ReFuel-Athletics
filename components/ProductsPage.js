@@ -129,14 +129,14 @@ function BundleBuilder({ onGoToQuiz }) {
             ))}
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="text-xl font-extrabold text-white">{bundle.name}</h3>
                 <p className="text-gray-400 text-sm mt-0.5">{bundle.description}</p>
               </div>
               <div className="text-right flex-shrink-0 ml-4">
-                <p className="text-3xl font-black text-white">${price.toFixed(2)}</p>
+                <p className="text-2xl sm:text-3xl font-black text-white">${price.toFixed(2)}</p>
                 <p className="text-xs text-gray-500 line-through">${retail.toFixed(2)}</p>
                 <span className="inline-block bg-green-500/20 text-green-400 text-xs font-bold px-2 py-0.5 rounded-full mt-1">
                   Save ${savings.toFixed(2)}
@@ -146,7 +146,7 @@ function BundleBuilder({ onGoToQuiz }) {
 
             <div className="space-y-2 mb-5">
               {bundle.items.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3">
+                <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl px-3 sm:px-4 py-2.5">
                   <span className="text-lg">{item.emoji}</span>
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-white">{item.label}</p>
@@ -164,14 +164,14 @@ function BundleBuilder({ onGoToQuiz }) {
               </p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button onClick={handleAdd}
                 className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition
                   ${added ? 'bg-green-500 text-white' : bundle.ctaColor}`}>
                 {added ? '✓ Added to Cart!' : `Add ${bundle.name} — $${price.toFixed(2)}`}
               </button>
               <button onClick={() => { setOpen(false); onGoToQuiz?.(); }}
-                className="px-4 py-3.5 rounded-xl font-bold text-sm border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200 transition">
+                className="sm:px-4 py-3.5 rounded-xl font-bold text-sm border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200 transition text-center">
                 Customize →
               </button>
             </div>
@@ -205,13 +205,13 @@ export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto px-0 sm:px-0">
 
       {/* Section header */}
       <div className="mb-10 text-center">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">ReFuel Athletics</p>
         <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">Shop</h1>
-        <p className="text-gray-500 max-w-lg mx-auto text-base">
+        <p className="text-gray-500 max-w-lg mx-auto text-sm sm:text-base">
           Every product is designed around one idea: your fuel should work as hard as you do.
         </p>
 
@@ -223,10 +223,10 @@ export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }
       {/* ── 2. Reusable Flask ── */}
       <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm mt-6">
         <AddedBadge show={packetAdded} />
-        <div className="flex flex-col md:flex-row">
+        <div className="flex flex-col">
 
           {/* Left: illustration */}
-          <div className="md:w-48 flex-shrink-0 bg-gray-950 flex items-center justify-center py-10 px-8">
+          <div className="w-full flex-shrink-0 bg-gray-950 flex items-center justify-center py-6 sm:py-8 px-8">
             <div className="w-20 h-40 rounded-2xl bg-gradient-to-b from-slate-600 to-slate-800 border border-slate-500 shadow-2xl flex flex-col items-center justify-between py-3 px-2 overflow-hidden relative">
               <div className="absolute top-0 left-2 w-4 h-full bg-white/10 rounded-full blur-sm" />
               <div className="w-4 h-5 bg-slate-400 rounded-t-full rounded-b-sm border border-slate-300 shadow" />
@@ -242,7 +242,7 @@ export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }
           </div>
 
           {/* Right: content */}
-          <div className="flex-1 p-6 flex flex-col md:flex-row gap-6">
+          <div className="flex-1 p-5 sm:p-6 flex flex-col gap-5">
             <div className="flex-1">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Hardware</span>
               <h2 className="text-2xl font-extrabold mt-1 text-gray-900 mb-1">Reusable Gel Flask</h2>
@@ -277,9 +277,9 @@ export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }
             </div>
 
             {/* Right: price + qty + CTA */}
-            <div className="flex flex-col justify-between gap-4 md:w-44 flex-shrink-0">
+            <div className="flex flex-col gap-4">
               <div>
-                <p className="text-3xl font-extrabold text-gray-900">$15</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-gray-900">$15</p>
                 <p className="text-gray-400 text-xs">per flask</p>
               </div>
               <div>
