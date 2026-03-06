@@ -470,6 +470,27 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
         }),
       }).catch(err => console.warn('Order email failed:', err));
 
+      // Schedule review request email (fires after estimated delivery)
+      const reviewToken = `${id}-${Math.random().toString(36).slice(2, 10)}`;
+      fetch('/api/reviews/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: reviewToken, orderId: id }),
+      }).then(() =>
+        fetch('/api/email/review-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: id,
+            firstName: shipping.firstName,
+            email:     shipping.email,
+            items,
+            shippingMethod: shipping.shippingMethod,
+            reviewToken,
+          }),
+        })
+      ).catch(err => console.warn('Review email schedule failed:', err));
+
       clearCart();
       setConfirmed(true);
     }

@@ -15,6 +15,7 @@ import AuthModal from '../components/AuthModal';
 import { CartProvider } from '../components/CartContext';
 import { AuthProvider, useAuth } from '../components/AuthContext';
 import { CommunityProvider } from '../components/CommunityContext';
+import { Testimonials } from '../components/Reviews';
 
 // ── Home / Landing Page ───────────────────────────────────────────────────────
 function HomePage({ onNavigate }) {
@@ -91,6 +92,9 @@ function HomePage({ onNavigate }) {
           <span className="text-gray-400 group-hover:text-white transition text-lg">→</span>
         </button>
       </div>
+
+      {/* Testimonials */}
+      <Testimonials />
 
     </div>
   );

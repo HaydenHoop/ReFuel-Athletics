@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { ProductStars } from './Reviews';
 import { useCart } from './CartContext';
 import { useAuth } from './AuthContext';
 
@@ -34,7 +35,7 @@ function Slider({ label, unit, min, max, step = 1, value, onChange, description 
 // quizFormula  — when set, snaps all sliders to quiz results
 // startOpen    — whether the customize panel starts expanded (true on Find Your Gel page)
 // onGoToQuiz   — optional link shown on Shop to jump to quiz tab
-export default function GelCard({ quizFormula, raceDayFormula, startOpen = false, onGoToQuiz }) {
+export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) {
   const { addItem } = useCart();
   const { user, saveFormula } = useAuth();
   const [saved, setSaved] = useState(false);
@@ -106,36 +107,6 @@ export default function GelCard({ quizFormula, raceDayFormula, startOpen = false
       price: gelPrice,
       qty: 1,
     });
-
-    // If quiz produced a race day formula, auto-add it alongside the training gel
-    if (raceDayFormula) {
-      const rdCarbs    = raceDayFormula.carbs ?? carbs;
-      const rdSodium   = raceDayFormula.sodium ?? sodium;
-      const rdCaffeine = raceDayFormula.caffeine ?? 75;
-      const rdFlavor   = raceDayFormula.flavor ?? gelFlavor;
-      const rdFlavor0  = rdFlavor.split(' ')[0];
-      const rdMalt     = Math.round(rdCarbs * (1 - fructoseRatio));
-      const rdFruct    = Math.round(rdCarbs * fructoseRatio);
-      const RACE_PREMIUM = 0.45;
-      const rdUnit = parseFloat((
-        1.20 +
-        (rdMalt * 0.008) + (rdFruct * 0.016) +
-        (rdSodium * 0.0005) + (100 * 0.001) + (20 * 0.002) +
-        (rdCaffeine * 0.008) +
-        (rdFlavor === 'Neutral / Unflavored' ? 0 : 0.10) +
-        ((raceDayFormula.thickness ?? thickness) - 1) * 0.04 +
-        RACE_PREMIUM
-      ).toFixed(2));
-      addItem({
-        id:       `raceday-${Date.now()}`,
-        name:     `Race Day Gel (${gelQty} pouches)`,
-        subtitle: `${rdCarbs}g carbs · ${rdSodium}mg sodium · ${rdCaffeine}mg caffeine · ${rdFlavor0} · $${rdUnit}/pouch`,
-        emoji:    '🏆',
-        price:    parseFloat((gelQty * rdUnit).toFixed(2)),
-        qty:      1,
-      });
-    }
-
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
   };
@@ -212,6 +183,7 @@ export default function GelCard({ quizFormula, raceDayFormula, startOpen = false
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Consumable</span>
             <h2 className="text-2xl font-extrabold mt-1">Custom Gel Powder</h2>
+                <ProductStars productKey="gel" productName="Custom Gel Powder" />
           </div>
           <div className="text-right">
             <p className="text-3xl font-extrabold">${unitPrice.toFixed(2)}</p>

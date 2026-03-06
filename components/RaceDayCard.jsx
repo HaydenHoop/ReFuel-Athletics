@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useCart } from './CartContext';
 import { useAuth } from './AuthContext';
 import { useCommunity } from './CommunityContext';
+import { ProductStars } from './Reviews';
 
 const FLAVORS = [
   { id: 'tropical-mango',   label: 'Tropical Mango',       emoji: '🥭' },
@@ -374,7 +375,8 @@ export default function RaceDayCard({ quizRaceDayFormula, autoAdded = false }) {
                 <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Race Day Formula</span>
                 <span className="bg-amber-500/20 text-amber-400 text-xs font-bold px-2 py-0.5 rounded-full border border-amber-500/30">PREMIUM</span>
               </div>
-              <h2 className="text-2xl font-extrabold text-white">Race Day Gel</h2>
+              <h2 className="text-2xl font-extrabold text-white mb-1">Race Day Gel</h2>
+          <ProductStars productKey="raceday" productName="Race Day Gel" />
             </div>
             <div className="text-right">
               <p className="text-3xl font-extrabold text-white">${unitPrice.toFixed(2)}</p>

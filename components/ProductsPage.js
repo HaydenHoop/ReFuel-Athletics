@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { ProductStars } from './Reviews';
 import { useCart } from './CartContext';
 import GelCard from './GelCard';
 import RaceDayCard from './RaceDayCard';
@@ -213,6 +214,7 @@ export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }
         <p className="text-gray-500 max-w-lg mx-auto text-base">
           Every product is designed around one idea: your fuel should work as hard as you do.
         </p>
+
       </div>
 
       {/* ── 1. Bundle Builder ── */}
@@ -243,7 +245,8 @@ export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }
           <div className="flex-1 p-6 flex flex-col md:flex-row gap-6">
             <div className="flex-1">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Hardware</span>
-              <h2 className="text-2xl font-extrabold mt-1 text-gray-900 mb-2">Reusable Gel Flask</h2>
+              <h2 className="text-2xl font-extrabold mt-1 text-gray-900 mb-1">Reusable Gel Flask</h2>
+              <ProductStars productKey="flask" productName="Reusable Gel Flask" />
               <p className="text-gray-500 text-sm leading-relaxed mb-4">
                 Stop tossing single-use foil after every race. Fill with your custom blend, twist shut, run. Dishwasher safe and race-belt ready.
               </p>
