@@ -1,4 +1,5 @@
 "use client";
+import FormulaCompare from './FormulaCompare';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useCommunity } from './CommunityContext';
@@ -255,6 +256,7 @@ function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
 // ── Formula Detail Modal ──────────────────────────────────────────────────────
 function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   const { getFormula, toggleLike, addComment, deleteComment, deleteFormula } = useCommunity();
+  const [comparing, setComparing] = useState(false);
   const [formula, setFormula]   = useState(null);
   const [comment, setComment]   = useState('');
   const [copied, setCopied]     = useState(false);
@@ -310,6 +312,13 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
+      {comparing && (
+        <FormulaCompare
+          formulaA={formula}
+          titleA={formula.name}
+          onClose={() => setComparing(false)}
+        />
+      )}
       <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
 
         {/* Header */}
@@ -351,7 +360,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
           </div>
 
           {/* Action buttons */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <button onClick={handleLike}
               className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl border transition-all font-semibold text-sm
                 ${liked ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-600 hover:border-gray-400'}`}>
@@ -369,6 +378,13 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
               <span className="text-lg">{copied ? '✓' : '🔗'}</span>
               <span className="text-xs">{copied ? 'Copied!' : 'Copy Link'}</span>
             </button>
+            {currentUser && (
+              <button onClick={() => setComparing(true)}
+                className="col-span-2 flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-200 text-gray-600 hover:border-gray-400 transition font-semibold text-sm">
+                <span className="text-lg">⚖️</span>
+                <span className="text-sm">Compare to my formulas</span>
+              </button>
+            )}
           </div>
 
           {/* Owner delete */}

@@ -1,4 +1,5 @@
 "use client";
+import FormulaCompare from './FormulaCompare';
 import { useState, useEffect } from 'react';
 import DevPanel from './DevPanel';
 import { useAuth } from './AuthContext';
@@ -240,7 +241,8 @@ function SavedFormulas({ onLoadFormula }) {
   const { getSavedFormulas, deleteFormula } = useAuth();
   const [formulas, setFormulas]   = useState([]);
   const [loading, setLoading]     = useState(true);
-  const [shareTarget, setShareTarget] = useState(null);
+  const [shareTarget,   setShareTarget]   = useState(null);
+  const [compareTarget, setCompareTarget] = useState(null);
 
   const refresh = () => getSavedFormulas().then(data => { setFormulas(data); setLoading(false); });
   useEffect(() => { refresh(); }, []);
@@ -266,6 +268,13 @@ function SavedFormulas({ onLoadFormula }) {
         onClose={() => setShareTarget(null)}
         formula={shareTarget}
       />
+      {compareTarget && (
+        <FormulaCompare
+          formulaA={compareTarget}
+          titleA={compareTarget.name}
+          onClose={() => setCompareTarget(null)}
+        />
+      )}
       <div className="space-y-3">
         {formulas.map(f => (
           <div key={f.id} className="bg-black text-white rounded-2xl p-5 flex items-start justify-between gap-4">
@@ -298,6 +307,10 @@ function SavedFormulas({ onLoadFormula }) {
               <button onClick={() => setShareTarget(f)}
                 className="text-gray-400 text-xs px-3 py-1.5 rounded-lg hover:text-white border border-gray-700 hover:border-gray-400 transition">
                 Share
+              </button>
+              <button onClick={() => setCompareTarget(f)}
+                className="text-gray-400 text-xs px-3 py-1.5 rounded-lg hover:text-white border border-gray-700 hover:border-gray-400 transition">
+                Compare
               </button>
               <button onClick={() => handleDelete(f.id)}
                 className="text-gray-600 text-xs px-3 py-1.5 rounded-lg hover:text-red-400 border border-gray-700 hover:border-red-400 transition">
