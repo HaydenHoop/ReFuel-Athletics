@@ -16,9 +16,89 @@ import { CartProvider } from '../components/CartContext';
 import { AuthProvider, useAuth } from '../components/AuthContext';
 import { CommunityProvider } from '../components/CommunityContext';
 
+// ── Home / Landing Page ───────────────────────────────────────────────────────
+function HomePage({ onNavigate }) {
+  const NAV_BUTTONS = [
+    { id: 'products',  label: 'Shop',           icon: '⚡', description: 'Training gel, race day gel & flasks' },
+    { id: 'quiz',      label: 'Find Your Gel',  icon: '🎯', description: 'Take the diagnostic, build your formula' },
+    { id: 'community', label: 'Community',      icon: '🌐', description: 'See what other athletes are running on' },
+    { id: 'faq',       label: 'FAQ',            icon: '❓', description: 'Ingredients, packet care, mixing tips' },
+    { id: 'mission',   label: 'Our Mission',    icon: '🏔', description: 'Why we built ReFuel' },
+  ];
+
+  return (
+    <div className="w-full max-w-4xl mx-auto">
+
+      {/* Hero — matches the image */}
+      <div className="relative rounded-3xl overflow-hidden bg-black text-white mb-8 min-h-[420px] flex flex-col justify-between p-10 md:p-14">
+        {/* Subtle grid texture */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
+          }} />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none" />
+
+        <div className="relative z-10">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-gray-400 mb-8">Our Mission</p>
+          <h1
+            className="text-5xl md:text-7xl font-extrabold leading-tight mb-8 max-w-2xl"
+            style={{ fontFamily: "'Georgia', serif", letterSpacing: '-0.02em' }}
+          >
+            Built for athletes who refuse to compromise.
+          </h1>
+          <p className="text-gray-300 text-lg leading-relaxed max-w-2xl">
+            ReFuel Athletics is a company built by athletes for athletes. Our mission is to give
+            you the best nutrition for your workouts while reducing impacts on the environment.
+            We refuse to force athletes to compromise between reducing waste and pushing your
+            boundaries to the max.
+          </p>
+        </div>
+      </div>
+
+      {/* Navigation buttons */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {NAV_BUTTONS.map(btn => (
+          <button
+            key={btn.id}
+            onClick={() => onNavigate(btn.id)}
+            className="flex items-center gap-4 p-5 bg-white border border-gray-200 rounded-2xl hover:border-gray-400 hover:shadow-md transition-all text-left group"
+          >
+            <div className="w-11 h-11 bg-gray-100 group-hover:bg-black rounded-xl flex items-center justify-center text-xl transition-colors flex-shrink-0">
+              <span className="group-hover:brightness-0 group-hover:invert transition">{btn.icon}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-gray-900 text-sm">{btn.label}</p>
+              <p className="text-xs text-gray-400 mt-0.5 leading-snug">{btn.description}</p>
+            </div>
+            <span className="ml-auto text-gray-300 group-hover:text-gray-600 transition flex-shrink-0">→</span>
+          </button>
+        ))}
+
+        {/* Shop CTA — full width, prominent */}
+        <button
+          onClick={() => onNavigate('products')}
+          className="sm:col-span-2 lg:col-span-3 flex items-center justify-between p-5 bg-black text-white rounded-2xl hover:bg-gray-800 transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center text-xl">📦</div>
+            <div>
+              <p className="font-bold text-base">Bundle & Save</p>
+              <p className="text-gray-400 text-xs mt-0.5">Starter Kit · Race Ready · Elite Pack — up to 15% off</p>
+            </div>
+          </div>
+          <span className="text-gray-400 group-hover:text-white transition text-lg">→</span>
+        </button>
+      </div>
+
+    </div>
+  );
+}
+
 function PageContent() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('products');
+  const [activeTab, setActiveTab] = useState('home');
   const [quizFormula, setQuizFormula] = useState(null);
   const [raceDayFormula, setRaceDayFormula] = useState(null);
   const [quizDone, setQuizDone] = useState(false);
@@ -27,16 +107,14 @@ function PageContent() {
   const [authMode, setAuthMode] = useState('signin');
 
   const handleQuizComplete = (result) => {
-    const { raceDayFormula: rdf, ...baseFormula } = result;
-    setQuizFormula(baseFormula);
-    setRaceDayFormula(rdf || null);
+    setQuizFormula(result);
     setQuizDone(true);
     setTimeout(() => {
       document.getElementById('quiz-gel-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 150);
   };
 
-  const resetQuiz = () => { setQuizFormula(null); setRaceDayFormula(null); setQuizDone(false); };
+  const resetQuiz = () => { setQuizFormula(null); setQuizDone(false); };
 
   const handleAccountClick = () => {
     if (user) {
@@ -81,6 +159,11 @@ function PageContent() {
       />
 
       <main className="flex flex-col items-center px-4 py-12">
+
+        {/* Home / Landing */}
+        {activeTab === 'home' && (
+          <HomePage onNavigate={setActiveTab} />
+        )}
 
         {/* Shop */}
         {activeTab === 'products' && (
@@ -137,7 +220,7 @@ function PageContent() {
                 <span className="w-6 h-6 bg-black text-white rounded-full text-xs font-black flex items-center justify-center">2</span>
                 Fine-Tune Your Formula & Add to Cart
               </h2>
-              <GelCard quizFormula={quizFormula} raceDayFormula={raceDayFormula} startOpen={true} />
+              <GelCard quizFormula={quizFormula} startOpen={true} />
             </div>
           </div>
         )}

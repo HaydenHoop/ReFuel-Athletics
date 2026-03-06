@@ -36,7 +36,6 @@ const BUNDLES = [
       { label: '20 Training Gel pouches', qty: 20, unitPrice: 1.85, emoji: '🧪' },
       { label: '1 Reusable Flask',        qty: 1,  unitPrice: 15,   emoji: '🧴' },
     ],
-    highlightColor: 'border-black',
     ctaColor: 'bg-black hover:bg-gray-800 text-white',
   },
   {
@@ -47,11 +46,10 @@ const BUNDLES = [
     description: 'Training gel + race day formula + flask. Show up prepared.',
     emoji: '🏆',
     items: [
-      { label: '20 Training Gel pouches',  qty: 20, unitPrice: 1.85, emoji: '🧪' },
-      { label: '5 Race Day Gel pouches',   qty: 5,  unitPrice: 2.30, emoji: '🏆' },
-      { label: '1 Reusable Flask',         qty: 1,  unitPrice: 15,   emoji: '🧴' },
+      { label: '20 Training Gel pouches', qty: 20, unitPrice: 1.85, emoji: '🧪' },
+      { label: '5 Race Day Gel pouches',  qty: 5,  unitPrice: 2.30, emoji: '🏆' },
+      { label: '1 Reusable Flask',        qty: 1,  unitPrice: 15,   emoji: '🧴' },
     ],
-    highlightColor: 'border-amber-400',
     ctaColor: 'bg-amber-500 hover:bg-amber-400 text-black',
   },
   {
@@ -66,11 +64,9 @@ const BUNDLES = [
       { label: '10 Race Day Gel pouches', qty: 10, unitPrice: 2.30, emoji: '🏆' },
       { label: '2 Reusable Flasks',       qty: 2,  unitPrice: 15,   emoji: '🧴' },
     ],
-    highlightColor: 'border-gray-700',
     ctaColor: 'bg-gray-900 hover:bg-gray-700 text-white',
   },
 ];
-
 const BUNDLE_DISCOUNT = { starter: 0.05, race: 0.10, elite: 0.15 };
 
 function BundleBuilder({ onGoToQuiz }) {
@@ -99,8 +95,7 @@ function BundleBuilder({ onGoToQuiz }) {
   };
 
   return (
-    <div className="mt-4">
-      {/* Collapsed toggle */}
+    <div>
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-900 to-black text-white rounded-2xl hover:from-gray-800 transition group"
@@ -112,37 +107,27 @@ function BundleBuilder({ onGoToQuiz }) {
             <p className="text-gray-400 text-xs">Save up to 15% · 3 curated packs</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-400 hidden sm:inline">
-            {open ? 'Close' : 'View bundles'}
-          </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 hidden sm:inline">{open ? 'Close' : 'View bundles'}</span>
           <span className={`text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>▼</span>
         </div>
       </button>
 
-      {/* Expanded panel */}
       {open && (
         <div className="mt-2 bg-gray-950 border border-gray-800 rounded-2xl overflow-hidden">
-
-          {/* Tier selector */}
-          <div className="grid grid-cols-3 gap-0 border-b border-gray-800">
+          {/* Tier tabs */}
+          <div className="grid grid-cols-3 border-b border-gray-800">
             {BUNDLES.map(b => (
               <button key={b.id} onClick={() => setSelected(b.id)}
                 className={`py-4 px-3 text-center transition-all border-b-2
-                  ${selected === b.id
-                    ? 'border-white bg-gray-900'
-                    : 'border-transparent hover:bg-gray-900/50'
-                  }`}>
+                  ${selected === b.id ? 'border-white bg-gray-900' : 'border-transparent hover:bg-gray-900/50'}`}>
                 <span className="text-xl block mb-1">{b.emoji}</span>
                 <p className={`text-xs font-bold ${selected === b.id ? 'text-white' : 'text-gray-500'}`}>{b.name}</p>
-                <span className={`inline-block mt-1 text-xs font-bold px-2 py-0.5 rounded-full ${b.tagColor}`}>
-                  {b.tag}
-                </span>
+                <span className={`inline-block mt-1 text-xs font-bold px-2 py-0.5 rounded-full ${b.tagColor}`}>{b.tag}</span>
               </button>
             ))}
           </div>
 
-          {/* Bundle detail */}
           <div className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
@@ -158,8 +143,7 @@ function BundleBuilder({ onGoToQuiz }) {
               </div>
             </div>
 
-            {/* Items list */}
-            <div className="space-y-2 mb-6">
+            <div className="space-y-2 mb-5">
               {bundle.items.map((item, i) => (
                 <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3">
                   <span className="text-lg">{item.emoji}</span>
@@ -172,11 +156,10 @@ function BundleBuilder({ onGoToQuiz }) {
               ))}
             </div>
 
-            {/* Savings bar */}
-            <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 mb-5">
-              <span className="text-green-400 text-lg">💰</span>
+            <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 mb-5">
+              <span className="text-green-400">💰</span>
               <p className="text-sm text-green-300 font-medium">
-                You save <span className="font-black">${savings.toFixed(2)}</span> ({Math.round(discount * 100)}% off) vs buying separately
+                Save <span className="font-black">${savings.toFixed(2)}</span> ({Math.round(discount * 100)}% off) vs buying separately
               </p>
             </div>
 
@@ -184,10 +167,10 @@ function BundleBuilder({ onGoToQuiz }) {
               <button onClick={handleAdd}
                 className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition
                   ${added ? 'bg-green-500 text-white' : bundle.ctaColor}`}>
-                {added ? '✓ Added to Cart!' : `Add ${bundle.name} Bundle — $${price.toFixed(2)}`}
+                {added ? '✓ Added to Cart!' : `Add ${bundle.name} — $${price.toFixed(2)}`}
               </button>
               <button onClick={() => { setOpen(false); onGoToQuiz?.(); }}
-                className="px-4 py-3.5 rounded-xl font-bold text-sm border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200 transition whitespace-nowrap">
+                className="px-4 py-3.5 rounded-xl font-bold text-sm border border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200 transition">
                 Customize →
               </button>
             </div>
@@ -232,109 +215,95 @@ export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }
         </p>
       </div>
 
-      {/* Product cards */}
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 items-start mb-8">
+      {/* ── 1. Bundle Builder ── */}
+      <BundleBuilder onGoToQuiz={onGoToQuiz} />
 
-        {/* ── Training Gel card ── */}
-        <GelCard quizFormula={quizFormula} raceDayFormula={raceDayFormula} startOpen={false} onGoToQuiz={onGoToQuiz} />
+      {/* ── 2. Reusable Flask ── */}
+      <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm mt-6">
+        <AddedBadge show={packetAdded} />
+        <div className="flex flex-col md:flex-row">
 
-        {/* ── Race Day Gel card ── */}
-        <RaceDayCard quizRaceDayFormula={raceDayFormula} autoAdded={!!raceDayFormula} />
-
-        {/* ── Reusable Packet card ── */}
-        <div className="relative bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col shadow-xl">
-          <AddedBadge show={packetAdded} />
-
-          <div className="p-8 pb-4 flex flex-col">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Hardware</span>
-                <h2 className="text-2xl font-extrabold mt-1 text-gray-900">Reusable Gel Packet</h2>
+          {/* Left: illustration */}
+          <div className="md:w-48 flex-shrink-0 bg-gray-950 flex items-center justify-center py-10 px-8">
+            <div className="w-20 h-40 rounded-2xl bg-gradient-to-b from-slate-600 to-slate-800 border border-slate-500 shadow-2xl flex flex-col items-center justify-between py-3 px-2 overflow-hidden relative">
+              <div className="absolute top-0 left-2 w-4 h-full bg-white/10 rounded-full blur-sm" />
+              <div className="w-4 h-5 bg-slate-400 rounded-t-full rounded-b-sm border border-slate-300 shadow" />
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="font-black text-white tracking-tight leading-none" style={{ fontSize: '9px' }}>RE</span>
+                <div className="w-6 h-px bg-slate-400" />
+                <span className="font-black text-white tracking-tight leading-none" style={{ fontSize: '9px' }}>FUEL</span>
               </div>
-              <div className="text-right">
-                <p className="text-3xl font-extrabold text-gray-900">$15</p>
-                <p className="text-gray-400 text-xs">per packet</p>
+              <div className="flex flex-col gap-1 w-full px-1">
+                {[...Array(3)].map((_, i) => <div key={i} className="h-px bg-slate-500 rounded-full" />)}
               </div>
-            </div>
-
-            {/* Illustrated packet */}
-            <div className="flex justify-center py-4 mb-4">
-              <div className="w-20 h-40 rounded-2xl bg-gradient-to-b from-slate-600 to-slate-800 border border-slate-500 shadow-2xl flex flex-col items-center justify-between py-3 px-2 overflow-hidden relative">
-                <div className="absolute top-0 left-2 w-4 h-full bg-white/10 rounded-full blur-sm" />
-                <div className="w-4 h-5 bg-slate-400 rounded-t-full rounded-b-sm border border-slate-300 shadow" />
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="font-black text-white tracking-tight leading-none" style={{ fontSize: '9px' }}>RE</span>
-                  <div className="w-6 h-px bg-slate-400" />
-                  <span className="font-black text-white tracking-tight leading-none" style={{ fontSize: '9px' }}>FUEL</span>
-                </div>
-                <div className="flex flex-col gap-1 w-full px-1">
-                  {[...Array(3)].map((_, i) => <div key={i} className="h-px bg-slate-500 rounded-full" />)}
-                </div>
-              </div>
-            </div>
-
-            <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-              Stop tossing single-use foil after every race. Fill with your custom blend, twist shut, run. Dishwasher safe and race-belt ready.
-            </p>
-
-            <ul className="space-y-1.5 mb-4">
-              {['Fill with any ReFuel gel blend', 'Roughly 2× the size of a standard gel', 'Leak-proof twist-lock nozzle', 'Dishwasher safe · BPA-free'].map(item => (
-                <li key={item} className="flex items-center gap-2 text-sm text-gray-700">
-                  <span className="text-green-500 font-bold text-xs">✓</span> {item}
-                </li>
-              ))}
-            </ul>
-
-            {/* Quantity */}
-            <div className="mb-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Quantity</p>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setPacketQty(q => Math.max(1, q - 1))}
-                  className="w-8 h-8 rounded-full border border-gray-200 text-gray-700 font-bold hover:border-gray-900 transition flex items-center justify-center text-sm">−</button>
-                <span className="text-xl font-bold w-8 text-center text-gray-900">{packetQty}</span>
-                <button onClick={() => setPacketQty(q => Math.min(20, q + 1))}
-                  className="w-8 h-8 rounded-full border border-gray-200 text-gray-700 font-bold hover:border-gray-900 transition flex items-center justify-center text-sm">+</button>
-                <span className="text-gray-400 text-sm ml-1">= <span className="text-gray-900 font-bold">${packetTotal}</span></span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mt-auto">
-              {['Zero waste', 'Race-belt ready', 'BPA-free silicone'].map(t => (
-                <span key={t} className="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full">{t}</span>
-              ))}
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="p-6 pt-2 space-y-2">
-            <button onClick={handleAddPacket}
-              className={`w-full py-3.5 rounded-xl font-bold text-base transition
-                ${packetAdded ? 'bg-green-500 text-white' : 'bg-black text-white hover:bg-gray-800'}`}>
-              {packetAdded ? '✓ Added to Cart!' : `Add to Cart — $${packetTotal}`}
-            </button>
-            <button onClick={() => setSpecsOpen(o => !o)}
-              className="w-full py-2.5 rounded-xl font-medium text-sm text-gray-400 border border-gray-200 hover:border-gray-400 hover:text-gray-700 transition">
-              {specsOpen ? '▲ Hide' : '▼ View'} Full Specifications
-            </button>
-            {specsOpen && (
-              <div className="bg-gray-50 rounded-xl p-4 grid grid-cols-2 gap-3">
-                {SPECS_PACKET.map(s => (
-                  <div key={s.label} className="flex items-start gap-2 text-sm">
-                    <span>{s.icon}</span>
-                    <div>
-                      <p className="text-gray-400 text-xs">{s.label}</p>
-                      <p className="text-gray-900 font-medium text-xs">{s.value}</p>
-                    </div>
-                  </div>
+          {/* Right: content */}
+          <div className="flex-1 p-6 flex flex-col md:flex-row gap-6">
+            <div className="flex-1">
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Hardware</span>
+              <h2 className="text-2xl font-extrabold mt-1 text-gray-900 mb-2">Reusable Gel Flask</h2>
+              <p className="text-gray-500 text-sm leading-relaxed mb-4">
+                Stop tossing single-use foil after every race. Fill with your custom blend, twist shut, run. Dishwasher safe and race-belt ready.
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-4">
+                {['Fill with any ReFuel blend', 'Leak-proof twist-lock nozzle', '2× size of a standard gel', 'Dishwasher safe · BPA-free'].map(item => (
+                  <span key={item} className="flex items-center gap-1.5 text-xs text-gray-600">
+                    <span className="text-green-500 font-bold">✓</span> {item}
+                  </span>
                 ))}
               </div>
-            )}
+              {specsOpen && (
+                <div className="bg-gray-50 rounded-xl p-4 grid grid-cols-2 gap-3 mb-4">
+                  {SPECS_PACKET.map(s => (
+                    <div key={s.label} className="flex items-start gap-2">
+                      <span>{s.icon}</span>
+                      <div>
+                        <p className="text-gray-400 text-xs">{s.label}</p>
+                        <p className="text-gray-900 font-medium text-xs">{s.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => setSpecsOpen(o => !o)}
+                className="text-xs text-gray-400 hover:text-gray-700 transition underline underline-offset-2">
+                {specsOpen ? 'Hide' : 'View'} full specs
+              </button>
+            </div>
+
+            {/* Right: price + qty + CTA */}
+            <div className="flex flex-col justify-between gap-4 md:w-44 flex-shrink-0">
+              <div>
+                <p className="text-3xl font-extrabold text-gray-900">$15</p>
+                <p className="text-gray-400 text-xs">per flask</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Quantity</p>
+                <div className="flex items-center gap-2 mb-4">
+                  <button onClick={() => setPacketQty(q => Math.max(1, q - 1))}
+                    className="w-8 h-8 rounded-full border border-gray-200 text-gray-700 font-bold hover:border-gray-900 transition flex items-center justify-center text-sm">−</button>
+                  <span className="text-lg font-bold w-6 text-center">{packetQty}</span>
+                  <button onClick={() => setPacketQty(q => Math.min(20, q + 1))}
+                    className="w-8 h-8 rounded-full border border-gray-200 text-gray-700 font-bold hover:border-gray-900 transition flex items-center justify-center text-sm">+</button>
+                </div>
+                <button onClick={handleAddPacket}
+                  className={`w-full py-3 rounded-xl font-bold text-sm transition
+                    ${packetAdded ? 'bg-green-500 text-white' : 'bg-black text-white hover:bg-gray-800'}`}>
+                  {packetAdded ? '✓ Added!' : `Add — $${packetTotal}`}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Bundle Builder */}
-      <BundleBuilder onGoToQuiz={onGoToQuiz} />
+      {/* ── 3. Training Gel + Race Day Gel stacked ── */}
+      <div className="flex flex-col gap-6 mt-6">
+        <GelCard quizFormula={quizFormula} raceDayFormula={raceDayFormula} startOpen={false} onGoToQuiz={onGoToQuiz} />
+        <RaceDayCard quizRaceDayFormula={raceDayFormula} autoAdded={!!raceDayFormula} />
+      </div>
 
     </div>
   );

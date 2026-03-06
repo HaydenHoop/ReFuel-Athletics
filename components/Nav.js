@@ -2,7 +2,8 @@
 import { useAuth } from './AuthContext';
 
 const TABS = [
-  { id: 'products',   label: 'Shop',          icon: '⚡' },
+  { id: 'home',       label: 'Home',           icon: '🏠' },
+  { id: 'products',   label: 'Shop',           icon: '⚡' },
   { id: 'quiz',       label: 'Find Your Gel',  icon: '🎯' },
   { id: 'community',  label: 'Community',      icon: '🌐' },
   { id: 'faq',        label: 'FAQ',            icon: '❓' },
