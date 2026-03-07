@@ -35,7 +35,10 @@ function OrderHistory() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getMyOrders().then(data => { setOrders(data); setLoading(false); });
+    if (!getMyOrders) return;
+    getMyOrders()
+      .then(data => { setOrders(data || []); setLoading(false); })
+      .catch(() => { setOrders([]); setLoading(false); });
   }, [getMyOrders]);
 
   const handleReorder = (order) => {
@@ -142,12 +145,16 @@ function OrderHistory() {
 
 // ── Saved Formulas ────────────────────────────────────────────────────────────
 function SavedFormulas({ onLoadFormula }) {
-  const { getSavedFormulas, deleteFormula } = useAuth();
+  const { getSavedFormulas, deleteFormula, user } = useAuth();
   const [formulas, setFormulas] = useState([]);
   const [loading, setLoading]  = useState(true);
 
-  const refresh = () => getSavedFormulas().then(data => { setFormulas(data); setLoading(false); });
-  useEffect(() => { refresh(); }, []);
+  const refresh = () => {
+    getSavedFormulas()
+      .then(data => { setFormulas(data || []); setLoading(false); })
+      .catch(() => { setFormulas([]); setLoading(false); });
+  };
+  useEffect(() => { if (user) refresh(); }, [user?.id]);
 
   const handleDelete = async (id) => {
     await deleteFormula(id);

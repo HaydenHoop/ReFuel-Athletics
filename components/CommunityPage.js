@@ -253,7 +253,7 @@ function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
 }
 
 // ── Formula Detail Modal ──────────────────────────────────────────────────────
-function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser, onViewPro }) {
+function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   const { getFormula, toggleLike, addComment, deleteComment, deleteFormula } = useCommunity();
   const [formula, setFormula]   = useState(null);
   const [comment, setComment]   = useState('');
@@ -316,19 +316,9 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser, onViewP
         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-start justify-between rounded-t-3xl sm:rounded-t-2xl z-10">
           <div className="flex-1 min-w-0 pr-4">
             <h2 className="text-lg font-extrabold text-gray-900 truncate">{formula.name}</h2>
-            <div className="flex items-center gap-2 mt-1">
-              {!formula.anonymous && <Avatar url={formula.authorAvatar} name={author} size="sm" />}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {formula.authorIsPro ? (
-                  <button onClick={() => onViewPro?.(formula.authorId, author)}
-                    className="font-bold text-gray-900 text-xs hover:underline">{author}</button>
-                ) : (
-                  <span className="text-xs font-semibold text-gray-600">{author}</span>
-                )}
-                {formula.authorIsPro && <ProBadge />}
-                <span className="text-xs text-gray-400">· {timeAgo(formula.sharedAt)}</span>
-              </div>
-            </div>
+            <p className="text-xs text-gray-400">
+              by <span className="font-semibold text-gray-600">{author}</span> · {timeAgo(formula.sharedAt)}
+            </p>
           </div>
           <button onClick={onClose}
             className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition flex-shrink-0">
@@ -461,16 +451,11 @@ function FormulaCard({ formula, onOpen, currentUser, onLike }) {
       {/* Card top — clickable to open detail */}
       <button onClick={() => onOpen(formula.id)} className="w-full text-left p-5 pb-3">
         <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex-1 min-w-0 flex items-start gap-2">
-            {!formula.anonymous && <Avatar url={formula.authorAvatar} name={author} size="sm" />}
-            <div className="min-w-0">
-              <h3 className="font-extrabold text-gray-900 text-base truncate">{formula.name}</h3>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <p className="text-xs text-gray-400">{formula.authorIsPro ? <span className="font-bold text-gray-700">{author}</span> : author}</p>
-                {formula.authorIsPro && <ProBadge />}
-                <span className="text-xs text-gray-400">· {timeAgo(formula.sharedAt)}</span>
-              </div>
-            </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-extrabold text-gray-900 text-base truncate">{formula.name}</h3>
+            <p className="text-xs text-gray-400 mt-0.5">
+              by <span className="font-semibold text-gray-500">{author}</span> · {timeAgo(formula.sharedAt)}
+            </p>
           </div>
           {formula.tags?.length > 0 && (
             <span className="flex-shrink-0 bg-gray-100 text-gray-500 text-xs font-semibold px-2 py-1 rounded-full">
@@ -522,7 +507,6 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
   const [shareOpen, setShareOpen]     = useState(false);
   const [detailId, setDetailId]       = useState(null);
   const [sharedId, setSharedId]       = useState(null);
-  const [proAthlete, setProAthlete]   = useState(null); // { id, name }
   const [search, setSearch]           = useState('');
   const [filterTag, setFilterTag]     = useState('All');
   const [feedLoading, setFeedLoading] = useState(true);
@@ -552,7 +536,7 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
 
   // Filter + search
   const filtered = formulas.filter(f => {
-    const matchesTag = filterTag === 'All' || (filterTag === 'Pro ⚡' ? f.authorIsPro : f.tags?.includes(filterTag));
+    const matchesTag = filterTag === 'All' || f.tags?.includes(filterTag);
     const matchesSearch = !search.trim() ||
       f.name.toLowerCase().includes(search.toLowerCase()) ||
       f.description?.toLowerCase().includes(search.toLowerCase()) ||
@@ -604,7 +588,7 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
           placeholder="Search formulas, athletes..."
           className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-black transition" />
         <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
-          {['All', 'Pro ⚡', ...SPORT_TAGS].map(tag => (
+          {['All', ...SPORT_TAGS].map(tag => (
             <button key={tag} onClick={() => setFilterTag(tag)}
               className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-semibold transition-all border
                 ${filterTag === tag ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-600 hover:border-gray-400'}`}>
@@ -659,14 +643,6 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
           onClose={() => { setDetailId(null); refresh(); }}
           onLoadFormula={handleLoadFormula}
           currentUser={user}
-          onViewPro={(id, name) => setProAthlete({ id, name })}
-        />
-      )}
-      {proAthlete && (
-        <ProAthleteModal
-          userId={proAthlete.id}
-          userName={proAthlete.name}
-          onClose={() => setProAthlete(null)}
         />
       )}
     </div>

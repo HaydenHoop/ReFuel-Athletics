@@ -63,6 +63,9 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
                     : 'border border-gray-200 text-gray-600 hover:border-gray-400 hover:text-gray-900 bg-white'
                   }`}>
                 <span className="text-base">👤</span>
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+                ) : null}
                 <span className="text-xs">{user ? user.name.split(' ')[0] : 'Account'}</span>
                 {user && <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />}
               </button>
@@ -90,7 +93,13 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
                 <span className={`text-xl leading-none transition-transform ${isActive ? 'scale-110' : ''}`}>
                   {tab.id === 'account' && user ? (
                     <span className="relative inline-block">
-                      👤
+                      {user.avatarUrl ? (
+                        <img src={user.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover" />
+                      ) : (
+                        <span className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-white text-xs font-bold inline-flex">
+                          {user.name?.[0]?.toUpperCase() || '?'}
+                        </span>
+                      )}
                       <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
                     </span>
                   ) : tab.icon}

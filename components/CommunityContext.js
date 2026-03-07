@@ -4,58 +4,41 @@ import { supabase } from '../lib/supabase';
 
 const CommunityContext = createContext(null);
 
-// Helper: enrich formula with author profile (avatar + pro status)
-async function enrichFormula(f, profilesMap) {
-  const profile = profilesMap?.[f.user_id];
-  return {
-    id:            f.id,
-    name:          f.name,
-    description:   f.description,
-    anonymous:     f.anonymous,
-    authorId:      f.user_id,
-    authorName:    f.author_name,
-    authorAvatar:  f.anonymous ? null : (profile?.avatar_url || null),
-    authorIsPro:   f.anonymous ? false : (profile?.is_pro || false),
-    tags:          f.tags || [],
-    carbs:         f.carbs,
-    sodium:        f.sodium,
-    potassium:     f.potassium,
-    magnesium:     f.magnesium,
-    caffeine:      f.caffeine,
-    fructoseRatio: f.fructose_ratio,
-    thickness:     f.thickness,
-    flavor:        f.flavor,
-    sharedAt:      f.created_at,
-    likes:         (f.formula_likes || []).map(l => l.user_id),
-    comments:      (f.formula_comments || [])
-      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-      .map(c => ({ id: c.id, authorId: c.user_id, authorName: c.author_name, text: c.text, postedAt: c.created_at })),
-  };
-}
-
 export function CommunityProvider({ children }) {
 
-  // ── Get all formulas ──────────────────────────────────────────────────────
+  // ── Get all formulas sorted by likes ─────────────────────────────────────
   const getFormulas = useCallback(async () => {
     const { data, error } = await supabase
       .from('community_formulas')
       .select(`*, formula_likes(user_id), formula_comments(id, user_id, author_name, text, created_at)`)
       .order('created_at', { ascending: false });
+
     if (error) { console.error('getFormulas error:', error); return []; }
 
-    // Batch-fetch profiles for all authors
-    const userIds = [...new Set(data.map(f => f.user_id).filter(Boolean))];
-    let profilesMap = {};
-    if (userIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, avatar_url, is_pro')
-        .in('user_id', userIds);
-      (profiles || []).forEach(p => { profilesMap[p.user_id] = p; });
-    }
-
-    const enriched = await Promise.all(data.map(f => enrichFormula(f, profilesMap)));
-    return enriched.sort((a, b) => b.likes.length - a.likes.length);
+    return data
+      .map(f => ({
+        id:            f.id,
+        name:          f.name,
+        description:   f.description,
+        anonymous:     f.anonymous,
+        authorId:      f.user_id,
+        authorName:    f.author_name,
+        tags:          f.tags || [],
+        carbs:         f.carbs,
+        sodium:        f.sodium,
+        potassium:     f.potassium,
+        magnesium:     f.magnesium,
+        caffeine:      f.caffeine,
+        fructoseRatio: f.fructose_ratio,
+        thickness:     f.thickness,
+        flavor:        f.flavor,
+        sharedAt:      f.created_at,
+        likes:         (f.formula_likes || []).map(l => l.user_id),
+        comments:      (f.formula_comments || [])
+          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+          .map(c => ({ id: c.id, authorId: c.user_id, authorName: c.author_name, text: c.text, postedAt: c.created_at })),
+      }))
+      .sort((a, b) => b.likes.length - a.likes.length);
   }, []);
 
   // ── Get single formula ────────────────────────────────────────────────────
@@ -65,15 +48,31 @@ export function CommunityProvider({ children }) {
       .select(`*, formula_likes(user_id), formula_comments(id, user_id, author_name, text, created_at)`)
       .eq('id', formulaId)
       .single();
+
     if (error || !data) return null;
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('avatar_url, is_pro')
-      .eq('user_id', data.user_id)
-      .maybeSingle();
-
-    return enrichFormula(data, { [data.user_id]: profile });
+    return {
+      id:            data.id,
+      name:          data.name,
+      description:   data.description,
+      anonymous:     data.anonymous,
+      authorId:      data.user_id,
+      authorName:    data.author_name,
+      tags:          data.tags || [],
+      carbs:         data.carbs,
+      sodium:        data.sodium,
+      potassium:     data.potassium,
+      magnesium:     data.magnesium,
+      caffeine:      data.caffeine,
+      fructoseRatio: data.fructose_ratio,
+      thickness:     data.thickness,
+      flavor:        data.flavor,
+      sharedAt:      data.created_at,
+      likes:         (data.formula_likes || []).map(l => l.user_id),
+      comments:      (data.formula_comments || [])
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+        .map(c => ({ id: c.id, authorId: c.user_id, authorName: c.author_name, text: c.text, postedAt: c.created_at })),
+    };
   }, []);
 
   // ── Share a formula ───────────────────────────────────────────────────────
@@ -108,6 +107,7 @@ export function CommunityProvider({ children }) {
       .eq('formula_id', formulaId)
       .eq('user_id', user.id)
       .maybeSingle();
+
     if (existing) {
       await supabase.from('formula_likes').delete().eq('formula_id', formulaId).eq('user_id', user.id);
       return { success: true, liked: false };
