@@ -62,10 +62,15 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
                     ? 'bg-black text-white'
                     : 'border border-gray-200 text-gray-600 hover:border-gray-400 hover:text-gray-900 bg-white'
                   }`}>
-                <span className="text-base">👤</span>
                 {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
-                ) : null}
+                  <img src={user.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+                ) : user ? (
+                  <span className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    {user.name?.[0]?.toUpperCase() || '?'}
+                  </span>
+                ) : (
+                  <span className="text-base">👤</span>
+                )}
                 <span className="text-xs">{user ? user.name.split(' ')[0] : 'Account'}</span>
                 {user?.isPro && (
                   <span className="text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-black px-1.5 py-0.5 rounded-md leading-none">PRO</span>

@@ -1,4 +1,5 @@
 "use client";
+import { supabase } from '../lib/supabase';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useCart } from './CartContext';
@@ -215,6 +216,158 @@ function SavedFormulas({ onLoadFormula }) {
   );
 }
 
+// ── Race Performances ────────────────────────────────────────────────────────
+function RacePerformances() {
+  const { user } = useAuth();
+  const [races, setRaces]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving]   = useState(false);
+  const [msg, setMsg]         = useState(null);
+  const [adding, setAdding]   = useState(false);
+  const [form, setForm]       = useState({ race_name: '', date: '', distance: '', time: '', position: '', notes: '' });
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('race_results').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => {
+        setRaces(data?.race_results || []);
+        setLoading(false);
+      });
+  }, [user?.id]);
+
+  const handleAdd = async () => {
+    if (!form.race_name.trim()) return;
+    setSaving(true);
+    const updated = [...races, { ...form, id: Date.now().toString() }];
+    const { error } = await supabase.from('profiles').upsert(
+      { user_id: user.id, race_results: updated },
+      { onConflict: 'user_id' }
+    );
+    setSaving(false);
+    if (error) { setMsg({ type: 'error', text: error.message }); return; }
+    setRaces(updated);
+    setForm({ race_name: '', date: '', distance: '', time: '', position: '', notes: '' });
+    setAdding(false);
+    setMsg({ type: 'success', text: 'Race added!' });
+    setTimeout(() => setMsg(null), 3000);
+  };
+
+  const handleDelete = async (id) => {
+    const updated = races.filter(r => r.id !== id);
+    await supabase.from('profiles').upsert(
+      { user_id: user.id, race_results: updated },
+      { onConflict: 'user_id' }
+    );
+    setRaces(updated);
+  };
+
+  const DISTANCES = ['5K', '10K', 'Half Marathon', 'Marathon', '50K', '50 Mile', '100K', '100 Mile', 'Sprint Tri', 'Olympic Tri', 'Half Iron', 'Ironman', 'Other'];
+
+  return (
+    <div className="border border-gray-200 rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Race Performances</p>
+          <p className="text-sm font-semibold text-gray-700 mt-0.5">Your public race history</p>
+        </div>
+        <button onClick={() => setAdding(a => !a)}
+          className="flex items-center gap-1.5 bg-black text-white text-xs font-bold px-3 py-2 rounded-xl hover:bg-gray-800 transition">
+          {adding ? '✕ Cancel' : '+ Add Race'}
+        </button>
+      </div>
+
+      {/* Add form */}
+      {adding && (
+        <div className="p-5 bg-amber-50 border-b border-amber-100 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1 block">Race Name *</label>
+              <input value={form.race_name} onChange={e => setForm(f => ({ ...f, race_name: e.target.value }))}
+                placeholder="e.g. Boston Marathon 2025"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-black transition" />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1 block">Distance</label>
+              <select value={form.distance} onChange={e => setForm(f => ({ ...f, distance: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-black transition bg-white">
+                <option value="">Select...</option>
+                {DISTANCES.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1 block">Date</label>
+              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-black transition" />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1 block">Finish Time</label>
+              <input value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
+                placeholder="e.g. 3:12:44"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-black transition" />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1 block">Finish Position</label>
+              <input value={form.position} onChange={e => setForm(f => ({ ...f, position: e.target.value }))}
+                placeholder="e.g. 12th overall"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-black transition" />
+            </div>
+            <div className="col-span-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1 block">Notes</label>
+              <input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                placeholder="e.g. PR, windy conditions, used ReFuel gel"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-black transition" />
+            </div>
+          </div>
+          <button onClick={handleAdd} disabled={saving || !form.race_name.trim()}
+            className="w-full bg-black text-white py-2.5 rounded-xl font-bold text-sm hover:bg-gray-800 transition disabled:opacity-50">
+            {saving ? 'Saving...' : 'Add Race →'}
+          </button>
+        </div>
+      )}
+
+      {/* Race list */}
+      <div className="divide-y divide-gray-50">
+        {loading ? (
+          <p className="text-sm text-gray-400 text-center py-8">Loading...</p>
+        ) : races.length === 0 ? (
+          <div className="text-center py-10">
+            <p className="text-3xl mb-2">🏅</p>
+            <p className="text-sm font-semibold text-gray-500">No races added yet</p>
+            <p className="text-xs text-gray-400 mt-1">Add your race history to show on your public pro profile</p>
+          </div>
+        ) : (
+          races.map(r => (
+            <div key={r.id} className="flex items-start justify-between gap-3 px-5 py-4 hover:bg-gray-50 transition group">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-bold text-gray-900 text-sm">{r.race_name}</p>
+                  {r.distance && <span className="text-xs bg-gray-100 text-gray-500 font-semibold px-2 py-0.5 rounded-full">{r.distance}</span>}
+                </div>
+                <div className="flex items-center gap-3 mt-1 flex-wrap">
+                  {r.time && <span className="text-xs text-gray-600 font-semibold">⏱ {r.time}</span>}
+                  {r.position && <span className="text-xs text-gray-500">📍 {r.position}</span>}
+                  {r.date && <span className="text-xs text-gray-400">{new Date(r.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>}
+                </div>
+                {r.notes && <p className="text-xs text-gray-400 mt-1 italic">{r.notes}</p>}
+              </div>
+              <button onClick={() => handleDelete(r.id)}
+                className="text-gray-300 hover:text-red-400 transition text-xs opacity-0 group-hover:opacity-100 flex-shrink-0 mt-1">
+                ✕
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
+      {msg && (
+        <div className={`mx-5 mb-4 text-xs px-3 py-2 rounded-lg ${msg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+          {msg.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Profile Settings ──────────────────────────────────────────────────────────
 function ProfileSettings() {
   const { user, updateProfile, uploadAvatar, requestPro, signOut } = useAuth();
@@ -362,6 +515,12 @@ function ProfileSettings() {
             </div>
           </div>
         </div>
+      )}
+
+
+      {/* Race Performances — only shown to Pro athletes */}
+      {user?.isPro && (
+        <RacePerformances />
       )}
 
       {/* Feedback */}
