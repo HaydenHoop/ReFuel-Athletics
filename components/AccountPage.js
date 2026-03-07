@@ -332,7 +332,7 @@ function ProfileSettings() {
       </div>
 
       {/* Pro request */}
-      {!user?.isPro && (
+      {(
         <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl p-5">
           <div className="flex items-start gap-3">
             <span className="text-2xl">⚡</span>
@@ -343,7 +343,11 @@ function ProfileSettings() {
               <p className="text-xs text-gray-500 mt-1 mb-3 leading-relaxed">
                 Are you a competitive athlete? Apply for a Pro tag and showcase your race results on your public profile.
               </p>
-              {user?.proStatus === 'pending' ? (
+              {user?.isPro ? (
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-100 px-3 py-1.5 rounded-full">
+                  ✓ Accepted — you have Pro status
+                </div>
+              ) : user?.proStatus === 'pending' ? (
                 <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1.5 rounded-full">
                   ⏳ Request pending review
                 </div>

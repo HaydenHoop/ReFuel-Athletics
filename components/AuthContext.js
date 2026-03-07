@@ -11,26 +11,39 @@ export function AuthProvider({ children }) {
 
   // ── Restore session on mount + listen for auth changes ───────────────────
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const buildUser = async (supabaseUser) => {
+      const base = {
+        id:        supabaseUser.id,
+        email:     supabaseUser.email,
+        name:      supabaseUser.user_metadata?.name || supabaseUser.email.split('@')[0],
+        createdAt: supabaseUser.created_at,
+      };
+      // Enrich with profile data (pro status, avatar)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_pro, pro_status, avatar_url')
+        .eq('user_id', supabaseUser.id)
+        .maybeSingle();
+      return {
+        ...base,
+        isPro:     profile?.is_pro     || false,
+        proStatus: profile?.pro_status || null,
+        avatarUrl: profile?.avatar_url || null,
+      };
+    };
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        setUser({
-          id:        session.user.id,
-          email:     session.user.email,
-          name:      session.user.user_metadata?.name || session.user.email.split('@')[0],
-          createdAt: session.user.created_at,
-        });
+        const enriched = await buildUser(session.user);
+        setUser(enriched);
       }
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        setUser({
-          id:        session.user.id,
-          email:     session.user.email,
-          name:      session.user.user_metadata?.name || session.user.email.split('@')[0],
-          createdAt: session.user.created_at,
-        });
+        const enriched = await buildUser(session.user);
+        setUser(enriched);
       } else {
         setUser(null);
       }

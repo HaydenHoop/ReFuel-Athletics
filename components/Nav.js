@@ -67,6 +67,9 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
                   <img src={user.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
                 ) : null}
                 <span className="text-xs">{user ? user.name.split(' ')[0] : 'Account'}</span>
+                {user?.isPro && (
+                  <span className="text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-black px-1.5 py-0.5 rounded-md leading-none">PRO</span>
+                )}
                 {user && <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />}
               </button>
               {/* Cart always visible */}
@@ -105,7 +108,7 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
                   ) : tab.icon}
                 </span>
                 <span className={`text-xs font-semibold leading-none ${isActive ? 'text-black' : 'text-gray-400'}`}>
-                  {tab.label}
+                  {tab.id === 'account' && user?.isPro ? '⚡ Pro' : tab.label}
                 </span>
                 {isActive && (
                   <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-black rounded-full" />
