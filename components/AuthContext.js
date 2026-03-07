@@ -206,10 +206,11 @@ export function AuthProvider({ children }) {
   // ── Request pro status ────────────────────────────────────────────────────
   const requestPro = useCallback(async () => {
     if (!user) return { error: 'Not signed in.' };
-    await supabase.from('profiles').upsert(
+    const { error } = await supabase.from('profiles').upsert(
       { user_id: user.id, pro_status: 'pending', requester_name: user.name, requester_email: user.email },
       { onConflict: 'user_id' }
-    ).catch(() => {});
+    );
+    if (error) return { error: error.message };
     fetch('/api/email/pro-request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
