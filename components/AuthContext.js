@@ -5,34 +5,76 @@ import { isDeveloper } from '../lib/devConfig';
 
 const AuthContext = createContext(null);
 
+// Fetch profile data separately — never blocks auth
+async function fetchProfile(userId) {
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('avatar_url, is_pro, pro_status')
+      .eq('user_id', userId)
+      .maybeSingle();
+    return {
+      avatarUrl: data?.avatar_url || null,
+      isPro:     data?.is_pro    || false,
+      proStatus: data?.pro_status || null,
+    };
+  } catch {
+    return { avatarUrl: null, isPro: false, proStatus: null };
+  }
+}
+
+function sessionToUser(s) {
+  return {
+    id:        s.id,
+    email:     s.email,
+    name:      s.user_metadata?.name || s.email.split('@')[0],
+    createdAt: s.created_at,
+    avatarUrl: null,
+    isPro:     false,
+    proStatus: null,
+  };
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ── Restore session on mount + listen for auth changes ───────────────────
   useEffect(() => {
+    // 1. Get session once, set user immediately, then fetch profile
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        setUser({
-          id:        session.user.id,
-          email:     session.user.email,
-          name:      session.user.user_metadata?.name || session.user.email.split('@')[0],
-          createdAt: session.user.created_at,
+        const base = sessionToUser(session.user);
+        setUser(base);
+        // Enrich with profile in background — won't block loading
+        fetchProfile(base.id).then(profile => {
+          setUser(prev => prev ? { ...prev, ...profile } : prev);
         });
       }
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser({
-          id:        session.user.id,
-          email:     session.user.email,
-          name:      session.user.user_metadata?.name || session.user.email.split('@')[0],
-          createdAt: session.user.created_at,
-        });
-      } else {
+    // 2. Auth state changes: only handle sign-in/sign-out events
+    //    Do NOT call fetchProfile here — it causes loops on updateUser
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
         setUser(null);
+        return;
+      }
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        const base = sessionToUser(session.user);
+        setUser(prev => {
+          // Preserve profile data if user is same person
+          if (prev?.id === base.id) return { ...base, avatarUrl: prev.avatarUrl, isPro: prev.isPro, proStatus: prev.proStatus };
+          return base;
+        });
+      }
+      // USER_UPDATED: just update name/email from metadata, don't re-fetch profile
+      if (event === 'USER_UPDATED' && session?.user) {
+        setUser(prev => prev ? {
+          ...prev,
+          name:  session.user.user_metadata?.name || session.user.email.split('@')[0],
+          email: session.user.email,
+        } : prev);
       }
     });
 
@@ -42,18 +84,15 @@ export function AuthProvider({ children }) {
   // ── Sign up ───────────────────────────────────────────────────────────────
   const signUp = useCallback(async ({ name, email, password }) => {
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email, password,
       options: { data: { name } },
     });
     if (error) return { error: error.message };
-
     fetch('/api/email/welcome', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email }),
-    }).catch(err => console.warn('Welcome email failed:', err));
-
+    }).catch(() => {});
     return { success: true };
   }, []);
 
@@ -72,6 +111,62 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut();
     setUser(null);
   }, []);
+
+  // ── Update profile (name / password) ─────────────────────────────────────
+  const updateProfile = useCallback(async ({ name, currentPassword, newPassword }) => {
+    if (!user) return { error: 'Not signed in.' };
+    if (newPassword) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email, password: currentPassword,
+      });
+      if (signInError) return { error: 'Current password is incorrect.' };
+      if (newPassword.length < 8) return { error: 'New password must be at least 8 characters.' };
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) return { error: error.message };
+    }
+    if (name?.trim() && name.trim() !== user.name) {
+      const { error } = await supabase.auth.updateUser({ data: { name: name.trim() } });
+      if (error) return { error: error.message };
+      // Update locally — don't wait for onAuthStateChange
+      setUser(prev => prev ? { ...prev, name: name.trim() } : prev);
+    }
+    return { success: true };
+  }, [user]);
+
+  // ── Upload avatar ─────────────────────────────────────────────────────────
+  const uploadAvatar = useCallback(async (file) => {
+    if (!user) return { error: 'Not signed in.' };
+    const ext  = file.name.split('.').pop();
+    const path = `${user.id}/avatar.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true });
+    if (uploadError) return { error: uploadError.message };
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+    const url = `${publicUrl}?t=${Date.now()}`;
+    await supabase.from('profiles').upsert(
+      { user_id: user.id, avatar_url: url },
+      { onConflict: 'user_id' }
+    );
+    setUser(prev => prev ? { ...prev, avatarUrl: url } : prev);
+    return { success: true, url };
+  }, [user]);
+
+  // ── Request pro status ────────────────────────────────────────────────────
+  const requestPro = useCallback(async () => {
+    if (!user) return { error: 'Not signed in.' };
+    await supabase.from('profiles').upsert(
+      { user_id: user.id, pro_status: 'pending' },
+      { onConflict: 'user_id' }
+    );
+    fetch('/api/email/pro-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: user.name, email: user.email, userId: user.id }),
+    }).catch(() => {});
+    setUser(prev => prev ? { ...prev, proStatus: 'pending' } : prev);
+    return { success: true };
+  }, [user]);
 
   // ── Save order ────────────────────────────────────────────────────────────
   const saveOrder = useCallback(async (orderData) => {
@@ -163,26 +258,6 @@ export function AuthProvider({ children }) {
     await supabase.from('saved_formulas').delete().eq('id', formulaId).eq('user_id', user.id);
   }, [user]);
 
-  // ── Update profile ────────────────────────────────────────────────────────
-  const updateProfile = useCallback(async ({ name, currentPassword, newPassword }) => {
-    if (!user) return { error: 'Not signed in.' };
-    if (newPassword) {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email, password: currentPassword,
-      });
-      if (signInError) return { error: 'Current password is incorrect.' };
-      if (newPassword.length < 8) return { error: 'New password must be at least 8 characters.' };
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-      if (updateError) return { error: updateError.message };
-    }
-    if (name?.trim()) {
-      const { error } = await supabase.auth.updateUser({ data: { name: name.trim() } });
-      if (error) return { error: error.message };
-      setUser(prev => ({ ...prev, name: name.trim() }));
-    }
-    return { success: true };
-  }, [user]);
-
   const isDev = isDeveloper(user?.email);
 
   return (
@@ -191,7 +266,7 @@ export function AuthProvider({ children }) {
       signUp, signIn, signOut,
       saveOrder, getMyOrders,
       saveFormula, getSavedFormulas, deleteFormula,
-      updateProfile,
+      updateProfile, uploadAvatar, requestPro,
     }}>
       {children}
     </AuthContext.Provider>
