@@ -34,30 +34,24 @@ function Bar({ value, max, color, side }) {
   );
 }
 
-// ── FormulaCompareModal ───────────────────────────────────────────────────────
-// Props:
-//   formulaA  — the "base" formula being compared (object with carbs/sodium/etc)
-//   onClose   — close handler
-//   title     — optional header label for formula A
-
 export default function FormulaCompare({ formulaA, onClose, titleA }) {
-  const { getSavedFormulas } = useAuth();
+  const { getSavedFormulas, user } = useAuth();
   const [savedFormulas, setSavedFormulas] = useState([]);
-
-  useEffect(() => {
-    getSavedFormulas().then(r => setSavedFormulas(r.formulas ?? []));
-  }, []);
   const [formulaB, setFormulaB] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Pick the first saved formula that isn't formulaA as default
+  // Re-fetch whenever user changes — fixes race condition where user isn't ready on first render
   useEffect(() => {
-    if (!formulaB && savedFormulas?.length > 0) {
-      const other = savedFormulas.find(f => f.id !== formulaA?.id);
-      if (other) setFormulaB(other);
-    }
-  }, [savedFormulas]);
+    setLoading(true);
+    getSavedFormulas().then(r => {
+      const list = Array.isArray(r) ? r : (r?.formulas ?? []);
+      setSavedFormulas(list);
+      // Auto-select first formula (no ID filtering — community IDs differ from saved IDs)
+      if (list.length > 0) setFormulaB(list[0]);
+      setLoading(false);
+    });
+  }, [user?.id]); // key dependency: re-run when user becomes available
 
-  // Max value per metric across both formulas (for bar scaling)
   const maxes = METRICS.reduce((acc, m) => {
     acc[m.key] = Math.max(val(formulaA, m.key), val(formulaB, m.key), 1);
     return acc;
@@ -87,21 +81,21 @@ export default function FormulaCompare({ formulaA, onClose, titleA }) {
           {/* Formula B picker */}
           <div className="bg-gray-50 rounded-2xl p-4">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Compare against</p>
-            {!savedFormulas || savedFormulas.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-2">No saved formulas to compare with</p>
+            {loading ? (
+              <p className="text-sm text-gray-400 text-center py-2">Loading your formulas...</p>
+            ) : savedFormulas.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-2">No saved formulas yet — save one from the quiz first</p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {savedFormulas
-                  .filter(f => f.id !== formulaA?.id)
-                  .map(f => (
-                    <button key={f.id} onClick={() => setFormulaB(f)}
-                      className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all border
-                        ${formulaB?.id === f.id
-                          ? 'bg-black text-white border-black'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}>
-                      {f.name || 'Unnamed'}
-                    </button>
-                  ))}
+                {savedFormulas.map(f => (
+                  <button key={f.id} onClick={() => setFormulaB(f)}
+                    className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all border
+                      ${formulaB?.id === f.id
+                        ? 'bg-black text-white border-black'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'}`}>
+                    {f.name || 'Unnamed'}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -136,7 +130,6 @@ export default function FormulaCompare({ formulaA, onClose, titleA }) {
 
               return (
                 <div key={m.key}>
-                  {/* Label row */}
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <span className="text-sm">{m.icon}</span>
                     <p className="text-xs font-bold uppercase tracking-widest text-gray-500">{m.label}</p>
@@ -148,7 +141,6 @@ export default function FormulaCompare({ formulaA, onClose, titleA }) {
                       </span>
                     )}
                   </div>
-                  {/* Bar pair */}
                   <div className="grid grid-cols-2 gap-3">
                     <Bar value={vA} max={mx} color={m.color} side="left" />
                     <Bar value={vB} max={mx} color={formulaB ? m.color : 'bg-gray-200'} side="right" />
