@@ -55,11 +55,11 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
   return (
     <>
       {/* Announcement bar */}
-      <div className="w-full bg-black text-white text-xs font-medium text-center py-2 tracking-wide">
+      <div className="w-full fixed top-0 left-0 right-0 z-50 bg-black text-white text-xs font-medium text-center py-2 tracking-wide">
         Free shipping on orders over $40 — use code <span className="font-bold underline underline-offset-2">FIRSTORDER</span> for 15% off
       </div>
 
-      <header className={`w-full sticky top-0 z-40 transition-all duration-300 border-b
+      <header className={`w-full fixed top-8 left-0 right-0 z-40 transition-all duration-300 border-b
         ${glassy
           ? 'bg-white/10 backdrop-blur-xl border-white/20 shadow-[0_2px_20px_rgba(255,255,255,0.08)]'
           : 'bg-white/90 backdrop-blur-md border-gray-200/60 shadow-sm'
