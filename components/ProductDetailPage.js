@@ -320,10 +320,10 @@ function InlineTestimonials({ testimonials }) {
       {testimonials.map((t, i) => (
         <div key={i} className="bg-gray-50 rounded-2xl p-5">
           <p className="text-gray-700 text-sm leading-relaxed italic">"{t.quote}"</p>
-          <div className="mt-4 pt-3 border-t border-gray-200">
-            <p className="text-sm font-bold text-gray-900">{t.name}</p>
-            {t.role && <p className="text-xs text-gray-400 mt-0.5">{t.role}</p>}
-          </div>
+          <p className="text-sm mt-3">
+            <span className="font-bold text-gray-900">— {t.name}</span>
+            {t.role && <span className="text-gray-400 font-normal">, {t.role}</span>}
+          </p>
         </div>
       ))}
     </div>
