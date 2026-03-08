@@ -122,7 +122,7 @@ export default function HomePage({ onTabChange }) {
           </h1>
 
           <p className="text-base sm:text-lg max-w-xl mx-auto mb-10 font-light leading-relaxed"
-            style={{ color: 'rgba(255,255,255,0.70)' }}>
+            style={{ color: 'rgba(255,255,255,0.55)' }}>
             Custom gel powder, mixed fresh. Dial in your exact formula —
             carbs, electrolytes, caffeine, flavor — then we ship it.
           </p>
@@ -153,7 +153,7 @@ export default function HomePage({ onTabChange }) {
         </div>
 
         {/* Slide dots */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2.5 z-20">
+        <div className="absolute bottom-36 left-1/2 -translate-x-1/2 flex gap-2.5 z-20">
           {SLIDES.map((_, i) => (
             <button key={i} onClick={() => goTo(i)}
               className={`transition-all duration-400 rounded-full
