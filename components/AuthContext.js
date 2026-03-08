@@ -11,39 +11,54 @@ export function AuthProvider({ children }) {
 
   // ── Restore session on mount + listen for auth changes ───────────────────
   useEffect(() => {
-    const buildUser = async (supabaseUser) => {
-      const base = {
-        id:        supabaseUser.id,
-        email:     supabaseUser.email,
-        name:      supabaseUser.user_metadata?.name || supabaseUser.email.split('@')[0],
-        createdAt: supabaseUser.created_at,
-      };
-      // Enrich with profile data (pro status, avatar)
-      const { data: profile } = await supabase
+    // Set basic user from session immediately — no async DB calls inside the listener
+    const fromSession = (supabaseUser) => ({
+      id:        supabaseUser.id,
+      email:     supabaseUser.email,
+      name:      supabaseUser.user_metadata?.name || supabaseUser.email.split('@')[0],
+      createdAt: supabaseUser.created_at,
+      isPro:     false,
+      proStatus: null,
+      avatarUrl: null,
+    });
+
+    // Fetch profile data separately — never called from inside onAuthStateChange
+    const fetchProfile = (userId) => {
+      supabase
         .from('profiles')
         .select('is_pro, pro_status, avatar_url')
-        .eq('user_id', supabaseUser.id)
-        .maybeSingle();
-      return {
-        ...base,
-        isPro:     profile?.is_pro     || false,
-        proStatus: profile?.pro_status || null,
-        avatarUrl: profile?.avatar_url || null,
-      };
+        .eq('user_id', userId)
+        .maybeSingle()
+        .then(({ data: profile }) => {
+          if (!profile) return;
+          setUser(prev => {
+            if (!prev || prev.id !== userId) return prev; // guard stale update
+            return {
+              ...prev,
+              isPro:     profile.is_pro     || false,
+              proStatus: profile.pro_status || null,
+              avatarUrl: profile.avatar_url || null,
+            };
+          });
+        });
     };
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const enriched = await buildUser(session.user);
-        setUser(enriched);
+        setUser(fromSession(session.user));
+        fetchProfile(session.user.id);
       }
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const enriched = await buildUser(session.user);
-        setUser(enriched);
+        setUser(prev => {
+          // If same user, keep existing profile enrichment (isPro etc) — don't wipe it
+          if (prev?.id === session.user.id) return prev;
+          fetchProfile(session.user.id);
+          return fromSession(session.user);
+        });
       } else {
         setUser(null);
       }
