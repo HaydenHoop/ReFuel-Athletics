@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import ProductDetailPage from '../components/ProductDetailPage';
 import HomePage from '../components/HomePage';
 import Quiz from '../components/Quiz';
 import GelCard from '../components/GelCard';
@@ -95,6 +96,14 @@ function PageContent() {
                 onGoToQuiz={() => setActiveTab('quiz')}
                 quizFormula={quizFormula}
                 onViewProduct={(id) => { setActiveProduct(id); setActiveTab('product-detail'); }}
+              />
+            )}
+
+            {activeTab === 'product-detail' && (
+              <ProductDetailPage
+                productId={activeProduct}
+                onBack={() => setActiveTab('products')}
+                onGoToQuiz={() => setActiveTab('quiz')}
               />
             )}
 

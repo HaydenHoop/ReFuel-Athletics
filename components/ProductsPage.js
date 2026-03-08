@@ -163,13 +163,13 @@ function ProductCard({ product, onViewProduct, onAddToCart, onCustomize }) {
 function HeroBanner({ reverse, gradient, placeholderLabel, title, subtitle, cta, onCta }) {
   return (
     <div className={`flex flex-col ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'} rounded-2xl overflow-hidden border border-gray-200 shadow-sm mb-6`}>
-      <div className="w-full md:w-1/2 aspect-video md:aspect-auto min-h-48 flex items-end justify-center pb-4"
+      <div className="w-full md:w-2/3 min-h-[420px] md:min-h-[520px] flex items-end justify-center pb-4"
         style={{ background: gradient }}>
         <p className="text-white/25 text-xs text-center px-6">{placeholderLabel}</p>
       </div>
-      <div className="w-full md:w-1/2 p-8 flex flex-col justify-center bg-white">
-        <h2 className="text-xl font-extrabold text-gray-900 mb-2">{title}</h2>
-        <p className="text-gray-500 text-sm leading-relaxed mb-5">{subtitle}</p>
+      <div className="w-full md:w-1/3 p-10 flex flex-col justify-center bg-white">
+        <h2 className="text-2xl font-extrabold text-gray-900 mb-3 leading-tight">{title}</h2>
+        <p className="text-gray-500 text-sm leading-relaxed mb-6">{subtitle}</p>
         <div>
           <button onClick={onCta}
             className="bg-black text-white text-xs font-bold uppercase tracking-widest px-5 py-2.5 rounded-lg hover:bg-gray-800 transition">
