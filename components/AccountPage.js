@@ -742,10 +742,10 @@ export default function AccountPage({ onLoadFormula }) {
   const [tab, setTab] = useState('orders');
 
   const TABS = [
-    { id: 'orders',   label: 'Order History', icon: '📦' },
-    { id: 'formulas', label: 'Saved Formulas', icon: '🧪' },
-    { id: 'profile',  label: 'Profile',        icon: '👤' },
-    ...(isDev ? [{ id: 'dev', label: 'Dev', icon: '⚡' }] : []),
+    { id: 'orders',   label: 'Order History'},
+    { id: 'formulas', label: 'Saved Formulas'},
+    { id: 'profile',  label: 'Profile'},
+    ...(isDev ? [{ id: 'dev', label: 'Dev'}] : []),
   ];
 
   return (
@@ -755,7 +755,7 @@ export default function AccountPage({ onLoadFormula }) {
       <div className="mb-8">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">My Account</p>
         <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-          Hey, {user?.name?.split(' ')[0]} 👋
+          Hey, {user?.name?.split(' ')[0]} 
         </h1>
       </div>
 
