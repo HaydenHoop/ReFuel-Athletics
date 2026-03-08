@@ -117,7 +117,7 @@ export default function HomePage({ onTabChange }) {
             style={{ fontSize: 'clamp(3.5rem, 11vw, 9rem)', lineHeight: 0.9 }}>
             FUEL<br />
             <span className="text-transparent"
-              style={{ WebkitTextStroke: '2px rgba(255,255,255,0.22)' }}>YOUR</span><br />
+              style={{ WebkitTextStroke: '2px rgba(255,255,255,0.55)' }}>YOUR</span><br />
             RACE
           </h1>
 
@@ -135,7 +135,7 @@ export default function HomePage({ onTabChange }) {
               </svg>
             </button>
             <button onClick={() => onTabChange('products')}
-              className="flex items-center gap-2 border border-white/20 text-white/60 px-8 py-4 rounded-full font-semibold text-sm hover:border-white/50 hover:text-white transition-all">
+              className="flex items-center gap-2 border border-white/50 text-white px-8 py-4 rounded-full font-semibold text-sm hover:bg-white/20 hover:border-white transition-all">
               Shop Products
             </button>
           </div>
