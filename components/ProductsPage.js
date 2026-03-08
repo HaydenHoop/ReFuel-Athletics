@@ -303,7 +303,7 @@ export default function ProductsPage({ onGoToQuiz, quizFormula, raceDayFormula }
       </div>
 
       {/* ── 4. Race Day Gel ── */}
-      <RaceDayCard quizRaceDayFormula={raceDayFormula} autoAdded={!!raceDayFormula} />
+      <div id="product-raceday"><RaceDayCard quizRaceDayFormula={raceDayFormula} autoAdded={!!raceDayFormula} /></div>
 
     </div>
   );

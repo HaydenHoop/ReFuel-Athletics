@@ -3,9 +3,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 
 const PRODUCTS_DROPDOWN = [
-  { label: 'Custom Gel Powder',   sub: 'Build your formula',    section: 'gel' },
-  { label: 'Reusable Gel Packet', sub: 'Fill it, race it',      section: 'packet' },
-  { label: 'Race Day Bundle',     sub: 'Gel + packet together', section: 'bundle' },
+  { label: 'Reusable Gel Flask',  sub: 'Fill it, race it',          section: 'packet' },
+  { label: 'Custom Gel Powder',   sub: 'Build your formula',         section: 'gel'    },
+  { label: 'Race Day Gel',        sub: 'Peak performance formula',   section: 'raceday' },
 ];
 
 const NAV_LINKS = [
@@ -34,8 +34,12 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
     setDropdownOpen(false);
     onTabChange('products');
     setTimeout(() => {
-      document.getElementById(`product-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 80);
+      const el = document.getElementById(`product-${section}`);
+      if (!el) return;
+      const navHeight = document.querySelector('header')?.offsetHeight ?? 100;
+      const top = el.getBoundingClientRect().top + window.scrollY - navHeight - 12;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }, 100);
   };
 
   return (
