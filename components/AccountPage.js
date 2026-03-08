@@ -1,7 +1,7 @@
 "use client";
 import { supabase } from '../lib/supabase';
 import FormulaCompare from './FormulaCompare';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { useCart } from './CartContext';
 import { Avatar, ProBadge } from './ProAthleteModal';
@@ -385,6 +385,161 @@ function RacePerformances() {
   );
 }
 
+// ── Avatar Crop Modal ─────────────────────────────────────────────────────────
+function AvatarCropModal({ imageSrc, onConfirm, onCancel }) {
+  const canvasRef    = useRef(null);
+  const [scale, setScale]   = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef(null);
+  const imgRef    = useRef(null);
+  const SIZE = 300; // canvas/preview size
+
+  // Load image
+  useEffect(() => {
+    const img = new window.Image();
+    img.onload = () => {
+      imgRef.current = img;
+      // Start scale so image fills the circle
+      const fit = Math.max(SIZE / img.width, SIZE / img.height);
+      setScale(fit);
+      setOffset({ x: (SIZE - img.width * fit) / 2, y: (SIZE - img.height * fit) / 2 });
+    };
+    img.src = imageSrc;
+  }, [imageSrc]);
+
+  // Redraw canvas whenever scale/offset change
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, SIZE, SIZE);
+
+    // Circular clip
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(img, offset.x, offset.y, img.width * scale, img.height * scale);
+    ctx.restore();
+
+    // Dim outside circle
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath();
+    ctx.rect(0, 0, SIZE, SIZE);
+    ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2, 0, Math.PI * 2, true);
+    ctx.fill();
+
+    // Circle outline
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, SIZE / 2, SIZE / 2 - 1, 0, Math.PI * 2);
+    ctx.stroke();
+  }, [scale, offset]);
+
+  const onMouseDown = (e) => {
+    setDragging(true);
+    dragStart.current = {
+      mx: e.clientX, my: e.clientY,
+      ox: offset.x,  oy: offset.y,
+    };
+  };
+  const onMouseMove = useCallback((e) => {
+    if (!dragging || !dragStart.current) return;
+    const dx = e.clientX - dragStart.current.mx;
+    const dy = e.clientY - dragStart.current.my;
+    setOffset({ x: dragStart.current.ox + dx, y: dragStart.current.oy + dy });
+  }, [dragging]);
+  const onMouseUp = () => setDragging(false);
+
+  // Touch support
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    setDragging(true);
+    dragStart.current = { mx: t.clientX, my: t.clientY, ox: offset.x, oy: offset.y };
+  };
+  const onTouchMove = (e) => {
+    if (!dragging || !dragStart.current) return;
+    const t = e.touches[0];
+    setOffset({
+      x: dragStart.current.ox + t.clientX - dragStart.current.mx,
+      y: dragStart.current.oy + t.clientY - dragStart.current.my,
+    });
+  };
+
+  const handleConfirm = () => {
+    const canvas = canvasRef.current;
+    const img = imgRef.current;
+    if (!canvas || !img) return;
+    // Export a clean 400x400 JPEG from the current crop
+    const out = document.createElement('canvas');
+    out.width = 400; out.height = 400;
+    const ctx = out.getContext('2d');
+    ctx.beginPath();
+    ctx.arc(200, 200, 200, 0, Math.PI * 2);
+    ctx.clip();
+    // Scale offset/dimensions from preview SIZE to output 400
+    const ratio = 400 / SIZE;
+    ctx.drawImage(img, offset.x * ratio, offset.y * ratio, img.width * scale * ratio, img.height * scale * ratio);
+    out.toBlob(blob => onConfirm(blob), 'image/jpeg', 0.92);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <p className="font-extrabold text-gray-900">Crop Profile Photo</p>
+          <p className="text-xs text-gray-400 mt-0.5">Drag to reposition · Scroll or pinch to zoom</p>
+        </div>
+
+        {/* Canvas preview */}
+        <div className="flex justify-center bg-gray-900 py-6">
+          <canvas
+            ref={canvasRef}
+            width={SIZE} height={SIZE}
+            className="rounded-full cursor-grab active:cursor-grabbing"
+            style={{ width: SIZE, height: SIZE }}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onMouseUp}
+          />
+        </div>
+
+        {/* Zoom slider */}
+        <div className="px-5 py-3 border-t border-gray-100">
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400">🔍</span>
+            <input type="range" min={0.1} max={4} step={0.01}
+              value={scale}
+              onChange={e => setScale(parseFloat(e.target.value))}
+              className="flex-1 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+            />
+            <span className="text-xs text-gray-400">{Math.round(scale * 100)}%</span>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="px-5 py-4 flex gap-3 border-t border-gray-100">
+          <button onClick={onCancel}
+            className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-50 transition">
+            Cancel
+          </button>
+          <button onClick={handleConfirm}
+            className="flex-1 bg-black text-white py-2.5 rounded-xl font-bold text-sm hover:bg-gray-800 transition">
+            Save Photo
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Profile Settings ──────────────────────────────────────────────────────────
 function ProfileSettings() {
   const { user, updateProfile, uploadAvatar, requestPro, signOut } = useAuth();
@@ -396,6 +551,7 @@ function ProfileSettings() {
   const [loading, setLoading]         = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [proLoading, setProLoading]   = useState(false);
+  const [cropSrc, setCropSrc]         = useState(null);
   const fileRef                       = useRef(null);
 
   const handleSave = async () => {
@@ -416,11 +572,20 @@ function ProfileSettings() {
     setCurrentPw(''); setNewPw(''); setConfirmPw('');
   };
 
-  const handleAvatarChange = async (e) => {
+  const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+    const reader = new FileReader();
+    reader.onload = (ev) => setCropSrc(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropConfirm = async (blob) => {
+    setCropSrc(null);
     setAvatarLoading(true);
-    const result = await uploadAvatar(file);
+    const result = await uploadAvatar(blob);
     setAvatarLoading(false);
     if (result.error) setMsg({ type: 'error', text: result.error });
     else setMsg({ type: 'success', text: 'Profile picture updated!' });
@@ -435,6 +600,14 @@ function ProfileSettings() {
   };
 
   return (
+    <>
+    {cropSrc && (
+      <AvatarCropModal
+        imageSrc={cropSrc}
+        onConfirm={handleCropConfirm}
+        onCancel={() => { setCropSrc(null); }}
+      />
+    )}
     <div className="space-y-6">
 
       {/* Avatar + name card */}
@@ -559,6 +732,7 @@ function ProfileSettings() {
         </button>
       </div>
     </div>
+    </>
   );
 }
 

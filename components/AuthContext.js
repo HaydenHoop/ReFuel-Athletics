@@ -213,20 +213,22 @@ export function AuthProvider({ children }) {
 
 
   // ── Upload avatar ─────────────────────────────────────────────────────────
-  const uploadAvatar = useCallback(async (file) => {
+  // Accepts a Blob (always JPEG from the crop canvas)
+  const uploadAvatar = useCallback(async (blob) => {
     if (!user) return { error: 'Not signed in.' };
-    const ext  = file.name.split('.').pop();
-    const path = `${user.id}/avatar.${ext}`;
+    // Fixed .jpg path — avoids extension mismatches across uploads
+    const path = `${user.id}/avatar.jpg`;
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(path, file, { upsert: true });
+      .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
     if (uploadError) return { error: uploadError.message };
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
-    const url = `${publicUrl}?t=${Date.now()}`;
-    await supabase.from('profiles').upsert(
+    const url = `${publicUrl}?v=${Date.now()}`;
+    const { error: profileError } = await supabase.from('profiles').upsert(
       { user_id: user.id, avatar_url: url },
       { onConflict: 'user_id' }
-    ).catch(() => {});
+    );
+    if (profileError) return { error: profileError.message };
     setUser(prev => prev ? { ...prev, avatarUrl: url } : prev);
     return { success: true, url };
   }, [user]);
