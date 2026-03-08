@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useCommunity } from './CommunityContext';
+import FormulaCompare from './FormulaCompare';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const FLAVORS = [
@@ -255,11 +256,12 @@ function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
 // ── Formula Detail Modal ──────────────────────────────────────────────────────
 function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   const { getFormula, toggleLike, addComment, deleteComment, deleteFormula } = useCommunity();
-  const [formula, setFormula]   = useState(null);
-  const [comment, setComment]   = useState('');
-  const [copied, setCopied]     = useState(false);
-  const [submitting, setSubmit] = useState(false);
-  const commentRef              = useRef(null);
+  const [formula, setFormula]     = useState(null);
+  const [comment, setComment]     = useState('');
+  const [copied, setCopied]       = useState(false);
+  const [submitting, setSubmit]   = useState(false);
+  const [comparing, setComparing] = useState(false);
+  const commentRef                = useRef(null);
 
   useEffect(() => {
     getFormula(formulaId).then(setFormula);
@@ -309,6 +311,14 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   };
 
   return (
+    <>
+    {comparing && formula && (
+      <FormulaCompare
+        formulaA={formula}
+        titleA={formula.name}
+        onClose={() => setComparing(false)}
+      />
+    )}
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
 
@@ -370,6 +380,13 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
               <span className="text-xs">{copied ? 'Copied!' : 'Copy Link'}</span>
             </button>
           </div>
+          {currentUser && (
+            <button onClick={() => setComparing(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-200 text-gray-600 hover:border-gray-400 transition font-semibold text-sm">
+              <span className="text-lg">⚖️</span>
+              <span>Compare to my formulas</span>
+            </button>
+          )}
 
           {/* Owner delete */}
           {isOwner && (
@@ -438,6 +455,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
