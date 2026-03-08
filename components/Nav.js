@@ -65,16 +65,24 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
                 if (link.dropdown) {
                   return (
                     <div key={link.id} ref={dropRef} className="relative">
-                      <button
-                        onMouseEnter={() => setDropdownOpen(true)}
-                        onClick={() => setDropdownOpen(o => !o)}
-                        className={`flex items-center gap-1 px-3 py-2 text-sm font-semibold rounded-lg transition-all
-                          ${activeTab === 'products' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
-                        {link.label}
-                        <svg className={`w-3 h-3 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
+                      {/* Clicking navigates; chevron or hover opens dropdown */}
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => { setDropdownOpen(false); onTabChange('products'); }}
+                          className={`px-3 py-2 text-sm font-semibold rounded-l-lg transition-all
+                            ${activeTab === 'products' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
+                          {link.label}
+                        </button>
+                        <button
+                          onMouseEnter={() => setDropdownOpen(true)}
+                          onClick={() => setDropdownOpen(o => !o)}
+                          className={`px-1.5 py-2 text-sm rounded-r-lg transition-all
+                            ${activeTab === 'products' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
+                          <svg className={`w-3 h-3 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
 
                       {dropdownOpen && (
                         <div onMouseLeave={() => setDropdownOpen(false)}
@@ -86,10 +94,6 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
                               <p className="text-xs text-gray-400 mt-0.5">{item.sub}</p>
                             </button>
                           ))}
-                          <button onClick={() => { setDropdownOpen(false); onTabChange('products'); }}
-                            className="w-full text-left px-4 py-2.5 bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">View All Products</p>
-                          </button>
                         </div>
                       )}
                     </div>
