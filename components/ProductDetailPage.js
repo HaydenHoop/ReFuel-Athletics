@@ -1,9 +1,7 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from './CartContext';
-import { ProductStars, Testimonials } from './Reviews';
 
-// ── Per-product data ──────────────────────────────────────────────────────────
 const PRODUCT_DATA = {
   flask: {
     category: 'Hardware',
@@ -17,14 +15,14 @@ const PRODUCT_DATA = {
     highlights: [
       'Food-grade silicone body — BPA-free',
       'Twist-lock nozzle, completely leak-proof',
-      'Holds 60–70ml (roughly 2× a standard gel)',
+      'Holds 60-70ml (roughly 2x a standard gel)',
       'Dishwasher safe, race-belt ready',
       'Works with any ReFuel gel formula',
       'Weighs just 28g empty',
     ],
     specs: [
-      { label: 'Size',     value: '~2× standard gel packet' },
-      { label: 'Capacity', value: '60–70ml fill volume' },
+      { label: 'Size',     value: '~2x standard gel packet' },
+      { label: 'Capacity', value: '60-70ml fill volume' },
       { label: 'Weight',   value: '28g empty' },
       { label: 'Closure',  value: 'Twist-lock nozzle, leak-proof' },
       { label: 'Material', value: 'Food-grade silicone body, PP cap' },
@@ -37,7 +35,6 @@ const PRODUCT_DATA = {
       { src: null, gradient: 'linear-gradient(135deg, #533483 0%, #1a1a2e 100%)', label: 'Flask on race belt during marathon' },
     ],
   },
-
   'custom-gel': {
     category: 'Custom Formula',
     name: 'Custom Gel Powder',
@@ -46,20 +43,20 @@ const PRODUCT_DATA = {
     price: 1.88,
     priceLabel: 'per pouch',
     action: 'customize',
-    description: 'Every athlete is different. Your fuel should be too. Dial in your exact carb ratio, electrolyte balance, caffeine level, and flavor — then we mix it fresh and ship it within 24 hours. Every pouch labeled with your exact breakdown.',
+    description: 'Every athlete is different. Your fuel should be too. Dial in your exact carb ratio, electrolyte balance, caffeine level, and flavor — then we mix it fresh and ship it within 24 hours.',
     highlights: [
       'Fully customizable carbs, sodium, potassium',
-      'Optional caffeine 0–100mg per serving',
+      'Optional caffeine 0-100mg per serving',
       '5 flavor options including unflavored',
       'Mixed fresh to order, shipped in 24hr',
       'Each pouch labeled with your formula',
       'Starting at just $1.88 per pouch',
     ],
     specs: [
-      { label: 'Carbs',      value: '20–60g per serving (adjustable)' },
-      { label: 'Sodium',     value: '100–500mg (adjustable)' },
-      { label: 'Potassium',  value: '50–200mg (adjustable)' },
-      { label: 'Caffeine',   value: '0–100mg (adjustable)' },
+      { label: 'Carbs',      value: '20-60g per serving (adjustable)' },
+      { label: 'Sodium',     value: '100-500mg (adjustable)' },
+      { label: 'Potassium',  value: '50-200mg (adjustable)' },
+      { label: 'Caffeine',   value: '0-100mg (adjustable)' },
       { label: 'Flavors',    value: 'Berry, Citrus, Tropical, Vanilla, Unflavored' },
       { label: 'Shelf life', value: '12 months sealed' },
     ],
@@ -70,7 +67,6 @@ const PRODUCT_DATA = {
       { src: null, gradient: 'linear-gradient(135deg, #52b788 0%, #2d6a4f 100%)', label: 'Multiple pouches of different flavors' },
     ],
   },
-
   'race-day': {
     category: 'Ready to Race',
     name: 'Race Day Gel',
@@ -104,7 +100,22 @@ const PRODUCT_DATA = {
   },
 };
 
-// ── Image gallery ─────────────────────────────────────────────────────────────
+const PER_PAGE = 10;
+
+function Stars({ rating, size = 'sm', empty = false }) {
+  const sz = size === 'lg' ? 'text-2xl' : size === 'md' ? 'text-lg' : 'text-sm';
+  return (
+    <span className="inline-flex gap-0.5">
+      {[1,2,3,4,5].map(n => (
+        <span key={n} className={`${sz} leading-none`}
+          style={{ color: (!empty && n <= Math.round(rating)) ? '#f59e0b' : '#e5e7eb' }}>
+          ★
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function ImageGallery({ images }) {
   const [idx, setIdx] = useState(0);
   return (
@@ -130,7 +141,6 @@ function ImageGallery({ images }) {
           </svg>
         </button>
       </div>
-      {/* Thumbnails */}
       <div className="flex gap-2">
         {images.map((img, i) => (
           <button key={i} onClick={() => setIdx(i)}
@@ -145,23 +155,227 @@ function ImageGallery({ images }) {
   );
 }
 
-// ── Main export ───────────────────────────────────────────────────────────────
+// Inline reviews section — no modal, renders directly on page
+function InlineReviews({ productKey, productName }) {
+  const [reviews, setReviews]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [page, setPage]         = useState(0);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/reviews/submit?limit=200&product=${productKey}`)
+      .then(r => r.json())
+      .then(d => { setReviews(d.reviews ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [productKey]);
+
+  // Already sorted high-to-low by the API (rating desc, created_at desc)
+  const withText   = reviews.filter(r => r.body);
+  const total      = reviews.length;
+  const avg        = total > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / total : 0;
+  const totalPages = Math.ceil(withText.length / PER_PAGE);
+  const visible    = withText.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
+
+  const dist = [5,4,3,2,1].map(star => ({
+    star,
+    count: reviews.filter(r => r.rating === star).length,
+    pct:   total > 0 ? Math.round((reviews.filter(r => r.rating === star).length / total) * 100) : 0,
+  }));
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-2xl" />
+        ))}
+      </div>
+    );
+  }
+
+  if (total === 0) {
+    return (
+      <div className="text-center py-16 border border-dashed border-gray-200 rounded-2xl">
+        <Stars empty size="lg" />
+        <p className="text-gray-500 text-sm mt-4 mb-1">No reviews yet.</p>
+        <p className="text-gray-400 text-xs">Be the first to review this product after your order.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Summary bar */}
+      <div className="flex items-center gap-8 p-6 bg-gray-50 rounded-2xl mb-8">
+        <div className="text-center flex-shrink-0">
+          <p className="text-5xl font-black text-gray-900 leading-none">{avg.toFixed(1)}</p>
+          <Stars rating={avg} size="md" />
+          <p className="text-xs text-gray-400 mt-1">{total} review{total !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="flex-1 space-y-2">
+          {dist.map(({ star, count, pct }) => (
+            <div key={star} className="flex items-center gap-3">
+              <span className="text-xs text-gray-500 w-3 text-right">{star}</span>
+              <span className="text-amber-400 text-xs leading-none">★</span>
+              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                  style={{ width: `${pct}%` }} />
+              </div>
+              <span className="text-xs text-gray-400 w-6 text-right">{count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Review list */}
+      {withText.length === 0 ? (
+        <p className="text-center text-gray-400 text-sm py-8">
+          No written reviews yet — be the first after your order!
+        </p>
+      ) : (
+        <>
+          <div className="space-y-4 mb-6">
+            {visible.map(r => (
+              <div key={r.id} className="bg-white border border-gray-100 rounded-2xl p-5">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                      {r.reviewer?.[0]?.toUpperCase() ?? 'A'}
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">{r.reviewer}</p>
+                      <p className="text-gray-400 text-xs">
+                        {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Stars rating={r.rating} />
+                    <span className="text-xs text-gray-500 font-semibold">{r.rating}.0</span>
+                  </div>
+                </div>
+                {r.title && <p className="font-semibold text-gray-900 text-sm mb-1">{r.title}</p>}
+                <p className="text-gray-500 text-sm leading-relaxed">{r.body}</p>
+                <span className="inline-block mt-3 text-xs bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">
+                  Verified Purchase
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+                className="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Previous
+              </button>
+              <span className="text-xs text-gray-400">
+                Page {page + 1} of {totalPages} &nbsp;·&nbsp; {withText.length} written reviews
+              </span>
+              <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1}
+                className="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed transition">
+                Next
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// Top-5 five-star testimonials pulled from DB for Overview tab
+function InlineTestimonials({ productKey }) {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/reviews/submit?topFive=true&product=${productKey}`)
+      .then(r => r.json())
+      .then(d => { setReviews(d.reviews ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [productKey]);
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(2)].map((_, i) => <div key={i} className="h-32 bg-gray-100 animate-pulse rounded-2xl" />)}
+      </div>
+    );
+  }
+
+  if (reviews.length === 0) {
+    return (
+      <div className="bg-gray-50 rounded-2xl p-8 text-center">
+        <p className="text-gray-400 text-sm">No testimonials yet.</p>
+        <p className="text-gray-400 text-xs mt-1">Reviews will appear here after customers leave feedback.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {reviews.map(r => (
+        <div key={r.id} className="bg-gray-50 rounded-2xl p-5">
+          <Stars rating={r.rating ?? 5} />
+          {r.title && <p className="font-extrabold text-gray-900 text-base mt-2 leading-snug">{r.title}</p>}
+          <p className="text-gray-500 text-sm mt-2 leading-relaxed">"{r.body}"</p>
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+            <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              {r.reviewer?.[0]?.toUpperCase() ?? 'A'}
+            </div>
+            <p className="text-xs font-semibold text-gray-700">{r.reviewer}</p>
+            <span className="text-xs bg-green-100 text-green-700 font-bold px-1.5 py-0.5 rounded-full ml-auto">
+              Verified
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Header stars widget — no modal, just scrolls to reviews tab
+function HeaderStars({ reviews, onClickReviews }) {
+  const total = reviews.length;
+  const avg   = total > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / total : 0;
+
+  return (
+    <button onClick={onClickReviews}
+      className="flex items-center gap-1.5 group hover:opacity-75 transition mt-1 w-fit">
+      <Stars rating={total > 0 ? avg : 0} empty={total === 0} />
+      <span className="text-xs text-gray-400 underline underline-offset-2 group-hover:text-gray-700 transition">
+        {total > 0 ? `${avg.toFixed(1)} (${total})` : 'No reviews yet'}
+      </span>
+    </button>
+  );
+}
+
 export default function ProductDetailPage({ productId, onBack, onGoToQuiz }) {
   const { addItem } = useCart();
   const product = PRODUCT_DATA[productId] || PRODUCT_DATA['flask'];
-  const [qty, setQty] = useState(1);
-  const [added, setAdded] = useState(false);
+  const [qty, setQty]             = useState(1);
+  const [added, setAdded]         = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [reviews, setReviews]     = useState([]);
+
+  // Fetch reviews once for the header stars (no modal needed — just scroll to tab)
+  useEffect(() => {
+    fetch(`/api/reviews/submit?limit=200&product=${product.productKey}`)
+      .then(r => r.json())
+      .then(d => setReviews(d.reviews ?? []))
+      .catch(() => {});
+  }, [product.productKey]);
 
   const handleAction = () => {
     if (product.action === 'add') {
-      addItem({
-        id: `${productId}-${Date.now()}`,
-        name: product.name,
-        subtitle: product.tagline,
-        price: product.price,
-        qty,
-      });
+      addItem({ id: `${productId}-${Date.now()}`, name: product.name, subtitle: product.tagline, price: product.price, qty });
       setAdded(true);
       setTimeout(() => setAdded(false), 2500);
     } else {
@@ -174,7 +388,6 @@ export default function ProductDetailPage({ productId, onBack, onGoToQuiz }) {
   return (
     <div className="w-full max-w-5xl mx-auto">
 
-      {/* Back */}
       <button onClick={onBack}
         className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-900 transition mb-6">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -192,8 +405,8 @@ export default function ProductDetailPage({ productId, onBack, onGoToQuiz }) {
           <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-1">{product.name}</h1>
           <p className="text-gray-400 text-sm mb-3">{product.tagline}</p>
 
-          {/* Live stars from DB — clicking opens the review modal built into ProductStars */}
-          <ProductStars productKey={product.productKey} productName={product.name} />
+          {/* Stars — clicking scrolls to Reviews tab instead of opening modal */}
+          <HeaderStars reviews={reviews} onClickReviews={() => setActiveTab('reviews')} />
 
           <div className="flex items-baseline gap-2 mt-5 mb-5">
             <span className="text-4xl font-black text-gray-900">${product.price}</span>
@@ -214,7 +427,7 @@ export default function ProductDetailPage({ productId, onBack, onGoToQuiz }) {
             <div className="flex items-center gap-3 mb-5">
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Qty</p>
               <button onClick={() => setQty(q => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-full border border-gray-200 font-bold hover:border-gray-900 transition flex items-center justify-center text-sm">−</button>
+                className="w-8 h-8 rounded-full border border-gray-200 font-bold hover:border-gray-900 transition flex items-center justify-center text-sm">-</button>
               <span className="text-lg font-bold w-8 text-center">{qty}</span>
               <button onClick={() => setQty(q => Math.min(20, q + 1))}
                 className="w-8 h-8 rounded-full border border-gray-200 font-bold hover:border-gray-900 transition flex items-center justify-center text-sm">+</button>
@@ -225,7 +438,7 @@ export default function ProductDetailPage({ productId, onBack, onGoToQuiz }) {
           <button onClick={handleAction}
             className={`w-full py-4 rounded-2xl font-bold text-base transition-all mb-3
               ${added ? 'bg-green-500 text-white' : 'bg-black text-white hover:bg-gray-800'}`}>
-            {added ? '✓ Added to Cart!' : product.action === 'add' ? `Add to Cart — $${total}` : 'Customize Your Formula →'}
+            {added ? '✓ Added to Cart!' : product.action === 'add' ? `Add to Cart - $${total}` : 'Customize Your Formula →'}
           </button>
 
           {product.action === 'customize' && (
@@ -241,7 +454,10 @@ export default function ProductDetailPage({ productId, onBack, onGoToQuiz }) {
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`pb-3 text-sm font-semibold capitalize transition-all border-b-2 -mb-px
                 ${activeTab === tab ? 'border-black text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'reviews'
+                ? `Reviews${reviews.length > 0 ? ` (${reviews.length})` : ''}`
+                : tab.charAt(0).toUpperCase() + tab.slice(1)
+              }
             </button>
           ))}
         </div>
@@ -249,22 +465,22 @@ export default function ProductDetailPage({ productId, onBack, onGoToQuiz }) {
 
       {/* Overview tab */}
       {activeTab === 'overview' && (
-        <div className="mb-16">
-          <div className="grid md:grid-cols-2 gap-10 mb-12">
-            <div>
-              <h3 className="text-lg font-extrabold text-gray-900 mb-4">What's Included</h3>
-              <ul className="space-y-3">
-                {product.highlights.map((h, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-gray-600">
-                    <span className="w-5 h-5 rounded-full bg-black text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
-                    {h}
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <div className="grid md:grid-cols-2 gap-10 mb-16">
+          <div>
+            <h3 className="text-lg font-extrabold text-gray-900 mb-4">What's Included</h3>
+            <ul className="space-y-3">
+              {product.highlights.map((h, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-gray-600">
+                  <span className="w-5 h-5 rounded-full bg-black text-white text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{i + 1}</span>
+                  {h}
+                </li>
+              ))}
+            </ul>
           </div>
-          {/* Testimonials pull top-5 five-star reviews with text from DB */}
-          <Testimonials />
+          <div>
+            <h3 className="text-lg font-extrabold text-gray-900 mb-4">Athlete Testimonials</h3>
+            <InlineTestimonials productKey={product.productKey} />
+          </div>
         </div>
       )}
 
@@ -282,13 +498,10 @@ export default function ProductDetailPage({ productId, onBack, onGoToQuiz }) {
         </div>
       )}
 
-      {/* Reviews tab — ProductStars already has the modal, so just render it again here as the entry point */}
+      {/* Reviews tab — fully inline, no modal */}
       {activeTab === 'reviews' && (
         <div className="mb-16">
-          <div className="flex flex-col items-center py-12 border border-gray-100 rounded-2xl">
-            <p className="text-sm text-gray-500 mb-3">Click to see all reviews for {product.name}</p>
-            <ProductStars productKey={product.productKey} productName={product.name} />
-          </div>
+          <InlineReviews productKey={product.productKey} productName={product.name} />
         </div>
       )}
 
