@@ -101,8 +101,14 @@ export default function HomePage({ onTabChange }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/20 pointer-events-none" />
 
         {/* Slide label — top right */}
-        <div className={`absolute top-5 right-6 z-20 transition-opacity duration-700 ${fading ? 'opacity-0' : 'opacity-100'}`}>
-          <span className="text-xs font-bold uppercase tracking-[0.25em] text-white/35">{slide.label}</span>
+        <div className="absolute top-24 right-6 z-20 flex flex-col items-end gap-2">
+          {SLIDES.map((s, i) => (
+            <button key={i} onClick={() => goTo(i)}
+              className={`text-xs font-bold uppercase tracking-[0.25em] transition-all duration-500
+                ${i === current ? 'text-white/70' : 'text-white/20 hover:text-white/40'}`}>
+              {s.label}
+            </button>
+          ))}
         </div>
 
         {/* ── Hero content ── */}
@@ -152,14 +158,7 @@ export default function HomePage({ onTabChange }) {
           </div>
         </div>
 
-        {/* Slide dots */}
-        <div className="absolute bottom-36 left-1/2 -translate-x-1/2 flex gap-2.5 z-20">
-          {SLIDES.map((_, i) => (
-            <button key={i} onClick={() => goTo(i)}
-              className={`transition-all duration-400 rounded-full
-                ${current === i ? 'w-7 h-2 bg-white' : 'w-2 h-2 bg-white/30 hover:bg-white/60'}`} />
-          ))}
-        </div>
+
 
         {/* Scroll cue */}
         <div className="absolute bottom-8 right-8 flex flex-col items-center gap-1.5 text-white/20 hidden sm:flex">
