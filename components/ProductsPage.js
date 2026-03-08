@@ -201,7 +201,7 @@ export default function ProductsPage({ onGoToQuiz, onViewProduct }) {
       {/* Page header */}
       <div className="mb-8 text-center">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">ReFuel Athletics</p>
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">Shop</h1>
+        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">Power Your Performance</h1>
         <p className="text-gray-500 max-w-lg mx-auto text-base">
           Every product is designed around one idea: your fuel should work as hard as you do.
         </p>
