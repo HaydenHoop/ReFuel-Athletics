@@ -20,7 +20,17 @@ const NAV_LINKS = [
 export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick }) {
   const { user } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const dropRef = useRef(null);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const isHero = activeTab === 'home';
+  const glassy = isHero && !scrolled;
 
   useEffect(() => {
     const handler = (e) => {
@@ -49,7 +59,11 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
         Free shipping on orders over $40 — use code <span className="font-bold underline underline-offset-2">FIRSTORDER</span> for 15% off
       </div>
 
-      <header className="w-full sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-gray-200/60 shadow-sm">
+      <header className={`w-full sticky top-0 z-40 transition-all duration-300 border-b
+        ${glassy
+          ? 'bg-white/10 backdrop-blur-xl border-white/20 shadow-[0_2px_20px_rgba(255,255,255,0.08)]'
+          : 'bg-white/90 backdrop-blur-md border-gray-200/60 shadow-sm'
+        }`}>
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
 
@@ -58,8 +72,8 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
               <div className="w-8 h-8 bg-black rounded-md flex items-center justify-center">
                 <span className="text-white text-xs font-black tracking-tighter">RF</span>
               </div>
-              <span className="font-extrabold text-gray-900 tracking-tight text-lg leading-none hidden sm:inline">
-                ReFuel <span className="font-light text-gray-400">Athletics</span>
+              <span className={`font-extrabold tracking-tight text-lg leading-none hidden sm:inline ${glassy ? 'text-white' : 'text-gray-900'}`}>
+                ReFuel <span className={`font-light ${glassy ? 'text-white/50' : 'text-gray-400'}`}>Athletics</span>
               </span>
             </button>
 
@@ -73,14 +87,18 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
                         <button
                           onClick={() => { setDropdownOpen(false); onTabChange('products'); }}
                           className={`px-3 py-2 text-sm font-semibold rounded-l-lg transition-all
-                            ${activeTab === 'products' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
+                            ${activeTab === 'products'
+                              ? glassy ? 'text-white bg-white/20' : 'text-gray-900 bg-gray-100'
+                              : glassy ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
                           {link.label}
                         </button>
                         <button
                           onMouseEnter={() => setDropdownOpen(true)}
                           onClick={() => setDropdownOpen(o => !o)}
                           className={`px-1.5 py-2 text-sm rounded-r-lg transition-all
-                            ${activeTab === 'products' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
+                            ${activeTab === 'products'
+                              ? glassy ? 'text-white bg-white/20' : 'text-gray-900 bg-gray-100'
+                              : glassy ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
                           <svg className={`w-3 h-3 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                           </svg>
@@ -105,7 +123,9 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
                 return (
                   <button key={link.id} onClick={() => onTabChange(link.id)}
                     className={`px-3 py-2 text-sm font-semibold rounded-lg transition-all
-                      ${activeTab === link.id ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
+                      ${activeTab === link.id
+                        ? glassy ? 'text-white bg-white/20' : 'text-gray-900 bg-gray-100'
+                        : glassy ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}>
                     {link.label}
                   </button>
                 );
@@ -117,8 +137,8 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
               <button onClick={onAccountClick}
                 className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-all
                   ${activeTab === 'account'
-                    ? 'bg-black text-white'
-                    : 'border border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}>
+                    ? glassy ? 'bg-white/30 text-white border border-white/40' : 'bg-black text-white border border-black'
+                    : glassy ? 'border border-white/30 text-white/80 hover:border-white/60 hover:text-white bg-white/10' : 'border border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}>
                 {user?.avatarUrl ? (
                   <img src={user.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                 ) : user ? (
@@ -143,15 +163,15 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
         </div>
 
         {/* Mobile bottom strip */}
-        <nav className="lg:hidden flex border-t border-gray-100">
+        <nav className={`lg:hidden flex border-t ${glassy ? 'border-white/20' : 'border-gray-100'}`}>
           {[...NAV_LINKS, { id: 'account', label: user?.isPro ? 'Pro' : 'Account', dropdown: false }].map(tab => {
             const isActive = activeTab === tab.id;
             const onClick = tab.id === 'account' ? onAccountClick : () => onTabChange(tab.id);
             return (
               <button key={tab.id} onClick={onClick}
-                className={`flex-1 py-2 text-center transition-colors ${isActive ? 'text-black' : 'text-gray-400'}`}>
+                className={`flex-1 py-2 text-center transition-colors ${isActive ? (glassy ? 'text-white' : 'text-black') : (glassy ? 'text-white/50' : 'text-gray-400')}`}>
                 <span className="text-xs font-semibold block leading-tight">{tab.label}</span>
-                {isActive && <div className="w-1 h-1 bg-black rounded-full mx-auto mt-0.5" />}
+                {isActive && <div className={`w-1 h-1 rounded-full mx-auto mt-0.5 ${glassy ? 'bg-white' : 'bg-black'}`} />}
               </button>
             );
           })}
