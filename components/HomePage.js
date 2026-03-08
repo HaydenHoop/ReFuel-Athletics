@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 // Until then, rich gradient placeholders are shown with a label overlay.
 const SLIDES = [
   {
-    src:   null,   // e.g. '/images/hero-beach.jpg'
+    src:   "/images/beach.jpg", 
     label: 'Coast',
     hint:  'Coastal / beach running scene',
     gradient: 'linear-gradient(160deg, #0a2540 0%, #1a5276 40%, #0d1b2a 100%)',
@@ -105,7 +105,7 @@ export default function HomePage({ onTabChange }) {
         </div>
 
         {/* ── Hero content ── */}
-        <div className={`relative z-10 text-center px-6 max-w-5xl mx-auto transition-all duration-700
+        <div className={`relative z-10 text-center px-6 max-w-5xl mx-auto transition-all duration-700 pt-32
           ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
 
           <p className="text-xs font-bold uppercase tracking-[0.35em] text-white/40 mb-8">
