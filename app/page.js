@@ -20,6 +20,7 @@ import { CommunityProvider } from '../components/CommunityContext';
 function PageContent() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
+  const [activeProduct, setActiveProduct] = useState(null);
   const [quizFormula, setQuizFormula] = useState(null);
   const [quizDone, setQuizDone] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -93,6 +94,7 @@ function PageContent() {
               <ProductsPage
                 onGoToQuiz={() => setActiveTab('quiz')}
                 quizFormula={quizFormula}
+                onViewProduct={(id) => { setActiveProduct(id); setActiveTab('product-detail'); }}
               />
             )}
 

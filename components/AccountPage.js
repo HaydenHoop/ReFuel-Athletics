@@ -56,7 +56,7 @@ function OrderHistory() {
   );
 
   if (orders.length === 0) return (
-    <EmptyState icon="📦" title="No orders yet"
+    <EmptyState icon="" title="No orders yet"
       description="Your completed orders will appear here with full details and tracking." />
   );
 
@@ -135,7 +135,7 @@ function OrderHistory() {
                     : 'bg-black text-white hover:bg-gray-800'
                   }`}
               >
-                {reordered === order.id ? '✓ Added to Cart!' : '🔁 Order Again'}
+                {reordered === order.id ? '✓ Added to Cart!' : 'Order Again'}
               </button>
             </div>
           )}
@@ -169,7 +169,7 @@ function SavedFormulas({ onLoadFormula }) {
   );
 
   if (formulas.length === 0) return (
-    <EmptyState icon="🧪" title="No saved formulas"
+    <EmptyState icon="" title="No saved formulas"
       description="After customizing your gel formula, save it to quickly reorder your exact blend." />
   );
 
@@ -195,12 +195,12 @@ function SavedFormulas({ onLoadFormula }) {
               )}
             </div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-400">
-              {f.carbs && <span>⚡ {f.carbs}g carbs</span>}
-              {f.sodium && <span>🧂 {f.sodium}mg sodium</span>}
-              {f.caffeine > 0 && <span>☕ {f.caffeine}mg caffeine</span>}
-              {f.flavor && <span>🍓 {f.flavor.split(' ')[0]}</span>}
-              {f.potassium && <span>⚗️ {f.potassium}mg potassium</span>}
-              {f.magnesium && <span>💊 {f.magnesium}mg magnesium</span>}
+              {f.carbs && <span> {f.carbs}g carbs</span>}
+              {f.sodium && <span> {f.sodium}mg sodium</span>}
+              {f.caffeine > 0 && <span> {f.caffeine}mg caffeine</span>}
+              {f.flavor && <span> {f.flavor.split(' ')[0]}</span>}
+              {f.potassium && <span> {f.potassium}mg potassium</span>}
+              {f.magnesium && <span> {f.magnesium}mg magnesium</span>}
             </div>
             <p className="text-xs text-gray-600 mt-2">
               Saved {new Date(f.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -217,7 +217,7 @@ function SavedFormulas({ onLoadFormula }) {
               onClick={() => setComparing(f)}
               className="text-gray-300 text-xs px-3 py-1.5 rounded-lg hover:text-white border border-gray-700 hover:border-gray-400 transition"
             >
-              ⚖️ Compare
+              Compare
             </button>
             <button
               onClick={() => handleDelete(f.id)}
@@ -692,7 +692,7 @@ function ProfileSettings() {
                 </div>
               ) : user?.proStatus === 'pending' ? (
                 <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1.5 rounded-full">
-                  ⏳ Request pending review
+                  Request pending review
                 </div>
               ) : user?.proStatus === 'rejected' ? (
                 <div className="text-xs text-red-500 font-semibold">Application not approved. Contact us for details.</div>
