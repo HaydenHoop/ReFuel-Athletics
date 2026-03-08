@@ -180,7 +180,7 @@ export default function HomePage({ onTabChange }) {
               { step: '03', title: 'We Mix & Ship',       body: 'Your formula is mixed fresh to order and shipped within 24 hours. Every pouch labeled with your exact breakdown.' },
             ].map(item => (
               <div key={item.step}>
-                <p className="text-8xl font-black text-gray-100 leading-none mb-4 select-none">{item.step}</p>
+                <p className="text-8xl font-black text-gray-300 leading-none mb-4 select-none">{item.step}</p>
                 <h3 className="text-xl font-extrabold text-gray-900 mb-2">{item.title}</h3>
                 <p className="text-gray-500 leading-relaxed text-sm">{item.body}</p>
               </div>
