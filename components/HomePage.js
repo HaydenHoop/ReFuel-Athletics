@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 // Until then, rich gradient placeholders are shown with a label overlay.
 const SLIDES = [
   {
-    src:   null,   // e.g. '/images/hero-beach.jpg'
+    src:   '/images/beach.jpg',
     label: 'Coast',
     hint:  'Coastal / beach running scene',
     gradient: 'linear-gradient(160deg, #0a2540 0%, #1a5276 40%, #0d1b2a 100%)',
