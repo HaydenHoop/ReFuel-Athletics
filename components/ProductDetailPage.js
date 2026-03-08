@@ -28,6 +28,11 @@ const PRODUCT_DATA = {
       { label: 'Material', value: 'Food-grade silicone body, PP cap' },
       { label: 'Care',     value: 'Dishwasher safe, top rack' },
     ],
+    testimonials: [
+      { quote: 'Its easy to clean, easy to use!', name: 'Sasha Kelly', role: 'CSM Track & XC Athlete' },
+      { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Triathlete' },
+      { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Trail Runner' },
+    ],
     images: [
       { src: null, gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', label: 'Runner with flask strapped to race belt on trail' },
       { src: null, gradient: 'linear-gradient(135deg, #0f3460 0%, #533483 100%)', label: 'Close-up of twist-lock nozzle detail' },
@@ -60,6 +65,11 @@ const PRODUCT_DATA = {
       { label: 'Flavors',    value: 'Berry, Citrus, Tropical, Vanilla, Unflavored' },
       { label: 'Shelf life', value: '12 months sealed' },
     ],
+    testimonials: [
+      { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Marathon Runner' },
+      { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Ultra Runner' },
+      { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Cyclist' },
+    ],
     images: [
       { src: null, gradient: 'linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%)', label: 'Close-up of custom gel powder in labeled pouch' },
       { src: null, gradient: 'linear-gradient(135deg, #40916c 0%, #52b788 100%)', label: 'Gel powder being scooped into flask' },
@@ -90,6 +100,11 @@ const PRODUCT_DATA = {
       { label: 'Caffeine',   value: '75mg natural caffeine' },
       { label: 'Flavors',    value: 'Berry Blast, Citrus Surge, Tropical, Cola, Vanilla' },
       { label: 'Shelf life', value: '18 months sealed' },
+    ],
+    testimonials: [
+      { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Marathon Runner' },
+      { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Triathlete' },
+      { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Sprinter' },
     ],
     images: [
       { src: null, gradient: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #b45309 100%)', label: 'Race day gel packet on running track' },
@@ -290,50 +305,24 @@ function InlineReviews({ productKey, productName }) {
   );
 }
 
-// Top-5 five-star testimonials pulled from DB for Overview tab
-function InlineTestimonials({ productKey }) {
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch(`/api/reviews/submit?topFive=true&product=${productKey}`)
-      .then(r => r.json())
-      .then(d => { setReviews(d.reviews ?? []); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [productKey]);
-
-  if (loading) {
-    return (
-      <div className="space-y-3">
-        {[...Array(2)].map((_, i) => <div key={i} className="h-32 bg-gray-100 animate-pulse rounded-2xl" />)}
-      </div>
-    );
-  }
-
-  if (reviews.length === 0) {
+// Static curated testimonials — fill in quotes/names in PRODUCT_DATA above
+function InlineTestimonials({ testimonials }) {
+  if (!testimonials || testimonials.length === 0) {
     return (
       <div className="bg-gray-50 rounded-2xl p-8 text-center">
         <p className="text-gray-400 text-sm">No testimonials yet.</p>
-        <p className="text-gray-400 text-xs mt-1">Reviews will appear here after customers leave feedback.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {reviews.map(r => (
-        <div key={r.id} className="bg-gray-50 rounded-2xl p-5">
-          <Stars rating={r.rating ?? 5} />
-          {r.title && <p className="font-extrabold text-gray-900 text-base mt-2 leading-snug">{r.title}</p>}
-          <p className="text-gray-500 text-sm mt-2 leading-relaxed">"{r.body}"</p>
-          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
-            <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              {r.reviewer?.[0]?.toUpperCase() ?? 'A'}
-            </div>
-            <p className="text-xs font-semibold text-gray-700">{r.reviewer}</p>
-            <span className="text-xs bg-green-100 text-green-700 font-bold px-1.5 py-0.5 rounded-full ml-auto">
-              Verified
-            </span>
+      {testimonials.map((t, i) => (
+        <div key={i} className="bg-gray-50 rounded-2xl p-5">
+          <p className="text-gray-700 text-sm leading-relaxed italic">"{t.quote}"</p>
+          <div className="mt-4 pt-3 border-t border-gray-200">
+            <p className="text-sm font-bold text-gray-900">{t.name}</p>
+            {t.role && <p className="text-xs text-gray-400 mt-0.5">{t.role}</p>}
           </div>
         </div>
       ))}
@@ -479,7 +468,7 @@ export default function ProductDetailPage({ productId, onBack, onGoToQuiz }) {
           </div>
           <div>
             <h3 className="text-lg font-extrabold text-gray-900 mb-4">Athlete Testimonials</h3>
-            <InlineTestimonials productKey={product.productKey} />
+            <InlineTestimonials testimonials={product.testimonials} />
           </div>
         </div>
       )}
