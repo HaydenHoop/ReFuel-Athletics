@@ -1,8 +1,121 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from './CartContext';
-import { ProductStars } from './Reviews';
 
+// ── Inline Stars (display only, no modal) ─────────────────────────────────────
+function Stars({ rating, empty = false }) {
+  return (
+    <span className="inline-flex gap-0.5">
+      {[1,2,3,4,5].map(n => (
+        <span key={n} className="text-sm leading-none"
+          style={{ color: (!empty && n <= Math.round(rating)) ? '#f59e0b' : '#e5e7eb' }}>★</span>
+      ))}
+    </span>
+  );
+}
+
+// ── Card-level stars: fetches data, calls onOpenModal with reviews when clicked ─
+function CardStars({ productKey, productName, onOpenModal }) {
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/reviews/submit?limit=200&product=${productKey}`)
+      .then(r => r.json())
+      .then(d => { setReviews(d.reviews ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [productKey]);
+
+  const total = reviews.length;
+  const avg   = total > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / total : 0;
+
+  return (
+    <button
+      onClick={e => {
+        e.stopPropagation();
+        onOpenModal({ reviews, avg, total, productName });
+      }}
+      className="flex items-center gap-1.5 group hover:opacity-75 transition w-fit"
+    >
+      <Stars rating={total > 0 ? avg : 0} empty={total === 0} />
+      <span className="text-xs text-gray-400 underline underline-offset-2 group-hover:text-gray-700 transition">
+        {loading ? '...' : total > 0 ? `${avg.toFixed(1)} (${total})` : 'No reviews yet'}
+      </span>
+    </button>
+  );
+}
+
+// ── Reviews modal — rendered at page level, outside all cards ─────────────────
+function ReviewsModal({ isOpen, onClose, reviews, avg, total, productName }) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">{productName}</p>
+            <div className="flex items-center gap-2">
+              <Stars rating={Math.round(avg)} />
+              <span className="text-2xl font-extrabold text-gray-900">{avg.toFixed(1)}</span>
+              <span className="text-sm text-gray-400">({total} reviews)</span>
+            </div>
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition">
+            ✕
+          </button>
+        </div>
+
+        {/* Distribution bars */}
+        <div className="px-6 py-4 border-b border-gray-100 flex-shrink-0">
+          {[5,4,3,2,1].map(star => {
+            const count = reviews.filter(r => r.rating === star).length;
+            const pct   = total > 0 ? (count / total) * 100 : 0;
+            return (
+              <div key={star} className="flex items-center gap-3 mb-1.5">
+                <span className="text-xs text-gray-500 w-2">{star}</span>
+                <span className="text-amber-400 text-xs leading-none">★</span>
+                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="text-xs text-gray-400 w-5 text-right">{count}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Review list */}
+        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+          {reviews.filter(r => r.body).length === 0 ? (
+            <p className="text-center text-gray-400 text-sm py-8">No written reviews yet — be the first after your order!</p>
+          ) : reviews.filter(r => r.body).map(r => (
+            <div key={r.id} className="border border-gray-100 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-1">
+                <Stars rating={r.rating} />
+                <span className="text-xs text-gray-400">
+                  {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+              </div>
+              {r.title && <p className="font-bold text-gray-900 text-sm mt-1">{r.title}</p>}
+              {r.body  && <p className="text-gray-600 text-sm mt-1 leading-relaxed">{r.body}</p>}
+              <p className="text-xs text-gray-400 mt-2">— {r.reviewer}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Product data ───────────────────────────────────────────────────────────────
 const PRODUCTS = [
   {
     id: 'flask',
@@ -86,7 +199,8 @@ function ProductImageSlideshow({ images }) {
   );
 }
 
-function ProductCard({ product, onViewProduct, onAddToCart, onCustomize }) {
+// ── Product card — no modal logic inside ──────────────────────────────────────
+function ProductCard({ product, onViewProduct, onAddToCart, onCustomize, onOpenModal }) {
   const [added, setAdded] = useState(false);
 
   const handleAction = (e) => {
@@ -111,9 +225,12 @@ function ProductCard({ product, onViewProduct, onAddToCart, onCustomize }) {
         <h3 className="font-extrabold text-gray-900 text-base leading-tight mb-1">{product.name}</h3>
         <p className="text-gray-400 text-xs mb-2">{product.tagline}</p>
 
-        {/* Live stars from DB — clicking opens modal from Reviews.jsx */}
-        <div onClick={e => e.stopPropagation()} className="mb-3">
-          <ProductStars productKey={product.id} productName={product.name} />
+        <div className="mb-3">
+          <CardStars
+            productKey={product.id}
+            productName={product.name}
+            onOpenModal={onOpenModal}
+          />
         </div>
 
         <div className="flex items-end justify-between mt-auto">
@@ -153,8 +270,10 @@ function HeroBanner({ reverse, gradient, placeholderLabel, title, subtitle, cta,
   );
 }
 
+// ── Page — modal state lives here, completely outside cards ───────────────────
 export default function ProductsPage({ onGoToQuiz, onViewProduct }) {
   const { addItem } = useCart();
+  const [modal, setModal] = useState(null); // { reviews, avg, total, productName }
 
   const handleAddToCart = (product) => {
     addItem({
@@ -167,61 +286,74 @@ export default function ProductsPage({ onGoToQuiz, onViewProduct }) {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
-
-      <div className="mb-8 text-center">
-        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">ReFuel Athletics</p>
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">Power Your Performance</h1>
-        <p className="text-gray-500 max-w-lg mx-auto text-base">
-          Every product is designed around one idea: your fuel should work as hard as you do.
-        </p>
-      </div>
-
-      <HeroBanner
-        gradient="linear-gradient(160deg, #0f172a 0%, #1e3a5f 50%, #0c4a6e 100%)"
-        placeholderLabel="Athlete running with ReFuel gel flask strapped to race belt"
-        title="The Reusable Gel Flask"
-        subtitle="Stop tossing single-use foil after every race. Fill with your custom blend, twist shut, run. Dishwasher safe and race-belt ready."
-        cta="Shop Flask"
-        onCta={() => onViewProduct && onViewProduct('flask')}
-      />
-      <HeroBanner
-        reverse
-        gradient="linear-gradient(160deg, #052e16 0%, #14532d 50%, #166534 100%)"
-        placeholderLabel="Close-up of ReFuel custom gel powder being poured into flask"
-        title="Custom Gel Powder"
-        subtitle="Dial in your exact formula — carbs, electrolytes, caffeine, flavor. Mixed fresh to order and shipped within 24 hours."
-        cta="Build Your Formula"
-        onCta={() => onGoToQuiz && onGoToQuiz()}
+    <>
+      {/* Modal rendered at page root — completely outside card DOM */}
+      <ReviewsModal
+        isOpen={!!modal}
+        onClose={() => setModal(null)}
+        reviews={modal?.reviews ?? []}
+        avg={modal?.avg ?? 0}
+        total={modal?.total ?? 0}
+        productName={modal?.productName ?? ''}
       />
 
-      <div className="mb-6 mt-10">
-        <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Shop the Full Lineup</h2>
-      </div>
+      <div className="w-full max-w-5xl mx-auto">
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-        {PRODUCTS.map(product => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onViewProduct={(id) => onViewProduct && onViewProduct(id)}
-            onAddToCart={handleAddToCart}
-            onCustomize={() => onGoToQuiz && onGoToQuiz()}
-          />
-        ))}
-      </div>
-
-      <div className="bg-gradient-to-r from-gray-900 to-black text-white rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <p className="font-extrabold text-lg">Better together</p>
-          <p className="text-gray-400 text-sm">Pair the reusable flask with your custom gel blend for a zero-waste race setup.</p>
+        <div className="mb-8 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">ReFuel Athletics</p>
+          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">Power Your Performance</h1>
+          <p className="text-gray-500 max-w-lg mx-auto text-base">
+            Every product is designed around one idea: your fuel should work as hard as you do.
+          </p>
         </div>
-        <button onClick={() => onGoToQuiz && onGoToQuiz()}
-          className="flex-shrink-0 bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition text-sm whitespace-nowrap">
-          Personalize Your Formula →
-        </button>
-      </div>
 
-    </div>
+        <HeroBanner
+          gradient="linear-gradient(160deg, #0f172a 0%, #1e3a5f 50%, #0c4a6e 100%)"
+          placeholderLabel="Athlete running with ReFuel gel flask strapped to race belt"
+          title="The Reusable Gel Flask"
+          subtitle="Stop tossing single-use foil after every race. Fill with your custom blend, twist shut, run. Dishwasher safe and race-belt ready."
+          cta="Shop Flask"
+          onCta={() => onViewProduct && onViewProduct('flask')}
+        />
+        <HeroBanner
+          reverse
+          gradient="linear-gradient(160deg, #052e16 0%, #14532d 50%, #166534 100%)"
+          placeholderLabel="Close-up of ReFuel custom gel powder being poured into flask"
+          title="Custom Gel Powder"
+          subtitle="Dial in your exact formula — carbs, electrolytes, caffeine, flavor. Mixed fresh to order and shipped within 24 hours."
+          cta="Build Your Formula"
+          onCta={() => onGoToQuiz && onGoToQuiz()}
+        />
+
+        <div className="mb-6 mt-10">
+          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Shop the Full Lineup</h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+          {PRODUCTS.map(product => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onViewProduct={(id) => onViewProduct && onViewProduct(id)}
+              onAddToCart={handleAddToCart}
+              onCustomize={() => onGoToQuiz && onGoToQuiz()}
+              onOpenModal={setModal}
+            />
+          ))}
+        </div>
+
+        <div className="bg-gradient-to-r from-gray-900 to-black text-white rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <p className="font-extrabold text-lg">Better together</p>
+            <p className="text-gray-400 text-sm">Pair the reusable flask with your custom gel blend for a zero-waste race setup.</p>
+          </div>
+          <button onClick={() => onGoToQuiz && onGoToQuiz()}
+            className="flex-shrink-0 bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition text-sm whitespace-nowrap">
+            Personalize Your Formula →
+          </button>
+        </div>
+
+      </div>
+    </>
   );
 }
