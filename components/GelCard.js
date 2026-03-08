@@ -5,11 +5,11 @@ import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
 
 const FLAVORS = [
-  { id: 'tropical-mango', label: 'Tropical Mango'},
-  { id: 'strawberry-lemon', label: 'Strawberry Lemonade',},
-  { id: 'orange-citrus', label: 'Orange Citrus'},
-  { id: 'watermelon-mint', label: 'Watermelon Mint'},
-  { id: 'neutral', label: 'Neutral / Unflavored' },
+  { id: 'tropical-mango', label: 'Tropical Mango', emoji: '🥭' },
+  { id: 'strawberry-lemon', label: 'Strawberry Lemonade', emoji: '🍓' },
+  { id: 'orange-citrus', label: 'Orange Citrus', emoji: '🍊' },
+  { id: 'watermelon-mint', label: 'Watermelon Mint', emoji: '🍉' },
+  { id: 'neutral', label: 'Neutral / Unflavored', emoji: '💧' },
 ];
 
 function Slider({ label, unit, min, max, step = 1, value, onChange, description }) {
