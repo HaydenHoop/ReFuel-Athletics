@@ -121,7 +121,8 @@ export default function HomePage({ onTabChange }) {
             RACE
           </h1>
 
-          <p className="text-white/50 text-base sm:text-lg max-w-xl mx-auto mb-10 font-light leading-relaxed">
+          <p className="text-base sm:text-lg max-w-xl mx-auto mb-10 font-light leading-relaxed"
+            style={{ color: 'rgba(255,255,255,0.55)' }}>
             Custom gel powder, mixed fresh. Dial in your exact formula —
             carbs, electrolytes, caffeine, flavor — then we ship it.
           </p>
