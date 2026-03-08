@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useCart } from './CartContext';
-import { ProductStars, Testimonials } from './ReviewsComponent';
+import { ProductStars, Testimonials } from './Reviews';
 
 // ── Per-product data ──────────────────────────────────────────────────────────
 const PRODUCT_DATA = {
