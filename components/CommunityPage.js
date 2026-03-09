@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useCommunity } from './CommunityContext';
+import { Avatar, ProBadge } from './ProAthleteModal';
+import { supabase } from '../lib/supabase';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const FLAVORS = [
@@ -14,28 +16,7 @@ const FLAVORS = [
 const THICKNESS_LABELS = ['', 'Liquid', 'Thin', 'Standard', 'Thick', 'Extra Thick'];
 const SPORT_TAGS = ['Running', 'Cycling', 'Triathlon', 'Trail', 'Ultra', 'MTB', 'Swimming', 'General'];
 
-// Consistent avatar color from name
-const AVATAR_COLORS = [
-  'bg-blue-500', 'bg-violet-500', 'bg-emerald-500', 'bg-rose-500',
-  'bg-amber-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500',
-];
-function avatarColor(name = '') {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-function initials(name = '') {
-  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
-}
 
-function Avatar({ name, size = 'md' }) {
-  const sz = size === 'sm' ? 'w-7 h-7 text-xs' : size === 'lg' ? 'w-10 h-10 text-sm' : 'w-8 h-8 text-xs';
-  return (
-    <div className={`${sz} ${avatarColor(name)} rounded-full flex items-center justify-center font-black text-white flex-shrink-0`}>
-      {initials(name)}
-    </div>
-  );
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function timeAgo(iso) {
@@ -83,7 +64,7 @@ function FormulaChips({ formula, small }) {
 }
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
-function Leaderboard({ formulas }) {
+function Leaderboard({ formulas, authorProfiles }) {
   const top = [...formulas]
     .sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0))
     .slice(0, 5);
@@ -100,23 +81,29 @@ function Leaderboard({ formulas }) {
       <div className="divide-y divide-gray-50">
         {top.length === 0 ? (
           <p className="text-xs text-gray-400 text-center py-6">No formulas yet</p>
-        ) : top.map((f, i) => (
-          <div key={f.id} className={`flex items-center gap-3 px-5 py-3.5 ${medalBg[i]} border-b last:border-0`}>
-            <span className={`flex-shrink-0 text-base ${i < 3 ? '' : 'w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs font-black text-gray-500'}`}>
-              {medals[i]}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="font-extrabold text-gray-900 text-sm truncate">{f.name}</p>
-              <p className="text-xs text-gray-400 truncate">
-                {f.anonymous ? 'Anonymous' : f.authorName}
-              </p>
+        ) : top.map((f, i) => {
+          const profile = !f.anonymous ? authorProfiles?.[f.authorId] : null;
+          const authorDisplay = f.anonymous ? 'Anonymous' : f.authorName;
+          return (
+            <div key={f.id} className={`flex items-center gap-3 px-4 py-3 ${medalBg[i]} border-b last:border-0`}>
+              <span className={`flex-shrink-0 text-base ${i < 3 ? '' : 'w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs font-black text-gray-500'}`}>
+                {medals[i]}
+              </span>
+              <Avatar url={profile?.avatarUrl || null} name={authorDisplay} size="sm" />
+              <div className="flex-1 min-w-0">
+                <p className="font-extrabold text-gray-900 text-sm truncate">{f.name}</p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-gray-400 truncate">{authorDisplay}</p>
+                  {profile?.isPro && <ProBadge />}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <span className="text-red-400 text-xs">♥</span>
+                <span className="text-xs font-bold text-gray-600">{f.likes?.length || 0}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <span className="text-red-400 text-xs">♥</span>
-              <span className="text-xs font-bold text-gray-600">{f.likes?.length || 0}</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -312,13 +299,27 @@ function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
 // ── Formula Detail Modal ──────────────────────────────────────────────────────
 function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   const { getFormula, toggleLike, addComment, deleteComment, deleteFormula } = useCommunity();
-  const [formula, setFormula]   = useState(null);
-  const [comment, setComment]   = useState('');
-  const [copied, setCopied]     = useState(false);
-  const [submitting, setSubmit] = useState(false);
-  const commentRef              = useRef(null);
+  const [formula, setFormula]         = useState(null);
+  const [authorProfile, setAuthorProfile] = useState(null);
+  const [comment, setComment]         = useState('');
+  const [copied, setCopied]           = useState(false);
+  const [submitting, setSubmit]       = useState(false);
+  const commentRef                    = useRef(null);
 
   useEffect(() => { getFormula(formulaId).then(setFormula); }, [formulaId]);
+
+  // Fetch author profile once formula loads
+  useEffect(() => {
+    if (!formula || formula.anonymous || !formula.authorId) return;
+    supabase
+      .from('profiles')
+      .select('avatar_url, is_pro')
+      .eq('user_id', formula.authorId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setAuthorProfile({ avatarUrl: data.avatar_url || null, isPro: data.is_pro || false });
+      });
+  }, [formula?.authorId, formula?.anonymous]);
 
   if (!formula) return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -356,10 +357,14 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
       <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-start justify-between z-10 rounded-t-3xl sm:rounded-t-2xl">
           <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
-            <Avatar name={author} size="lg" />
+            <Avatar url={authorProfile?.avatarUrl || null} name={author} size="lg" />
             <div className="min-w-0">
               <h2 className="text-base font-extrabold text-gray-900 truncate">{formula.name}</h2>
-              <p className="text-xs text-gray-400">by <span className="font-semibold text-gray-600">{author}</span> · {timeAgo(formula.sharedAt)}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-xs text-gray-400">by <span className="font-semibold text-gray-600">{author}</span></p>
+                {authorProfile?.isPro && <ProBadge />}
+                <span className="text-xs text-gray-400">· {timeAgo(formula.sharedAt)}</span>
+              </div>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition text-sm flex-shrink-0">✕</button>
@@ -457,7 +462,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
 }
 
 // ── Formula Card (feed item) ──────────────────────────────────────────────────
-function FormulaCard({ formula, onOpen, currentUser, onLike }) {
+function FormulaCard({ formula, onOpen, currentUser, onLike, authorProfile }) {
   const liked  = currentUser && formula.likes?.includes(currentUser.id);
   const author = formula.anonymous ? 'Anonymous Athlete' : formula.authorName;
 
@@ -466,9 +471,12 @@ function FormulaCard({ formula, onOpen, currentUser, onLike }) {
       <button onClick={() => onOpen(formula.id)} className="w-full text-left p-5 pb-4">
         {/* Author row */}
         <div className="flex items-center gap-2.5 mb-3">
-          <Avatar name={author} size="sm" />
+          <Avatar url={authorProfile?.avatarUrl || null} name={author} size="sm" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-700 leading-none">{author}</p>
+            <div className="flex items-center gap-1.5 leading-none">
+              <p className="text-xs font-semibold text-gray-700">{author}</p>
+              {authorProfile?.isPro && <ProBadge />}
+            </div>
             <p className="text-xs text-gray-400 mt-0.5">{timeAgo(formula.sharedAt)}</p>
           </div>
           {formula.tags?.length > 0 && (
@@ -520,6 +528,36 @@ function FormulaCard({ formula, onOpen, currentUser, onLike }) {
   );
 }
 
+// ── Author profiles cache ─────────────────────────────────────────────────────
+// Fetches avatar_url + is_pro for a set of user_ids in one query
+function useAuthorProfiles(formulas) {
+  const [profiles, setProfiles] = useState({}); // { [userId]: { avatarUrl, isPro } }
+
+  useEffect(() => {
+    const ids = [...new Set(
+      formulas
+        .filter(f => !f.anonymous && f.authorId)
+        .map(f => f.authorId)
+    )];
+    if (ids.length === 0) return;
+
+    supabase
+      .from('profiles')
+      .select('user_id, avatar_url, is_pro')
+      .in('user_id', ids)
+      .then(({ data }) => {
+        if (!data) return;
+        const map = {};
+        data.forEach(p => {
+          map[p.user_id] = { avatarUrl: p.avatar_url || null, isPro: p.is_pro || false };
+        });
+        setProfiles(map);
+      });
+  }, [formulas]);
+
+  return profiles;
+}
+
 // ── Main CommunityPage ────────────────────────────────────────────────────────
 export default function CommunityPage({ onLoadFormula, onSignIn }) {
   const { user }                        = useAuth();
@@ -531,6 +569,8 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
   const [search, setSearch]             = useState('');
   const [filterTag, setFilterTag]       = useState('All');
   const [feedLoading, setFeedLoading]   = useState(true);
+
+  const authorProfiles = useAuthorProfiles(formulas);
 
   const refresh = () => {
     setFeedLoading(true);
@@ -653,7 +693,8 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
           ) : (
             <div className="space-y-4">
               {filtered.map(f => (
-                <FormulaCard key={f.id} formula={f} onOpen={setDetailId} currentUser={user} onLike={handleLike} />
+                <FormulaCard key={f.id} formula={f} onOpen={setDetailId} currentUser={user} onLike={handleLike}
+                  authorProfile={!f.anonymous ? authorProfiles[f.authorId] : null} />
               ))}
             </div>
           )}
@@ -661,7 +702,7 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
 
         {/* Sidebar */}
         <div className="lg:w-72 space-y-4 flex-shrink-0">
-          <Leaderboard formulas={formulas} />
+          <Leaderboard formulas={formulas} authorProfiles={authorProfiles} />
           <CommunityStats formulas={formulas} />
         </div>
       </div>
