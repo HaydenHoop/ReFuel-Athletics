@@ -4,11 +4,41 @@ import { useCart } from './CartContext';
 import { useAuth } from './AuthContext';
 
 const FLAVORS = [
-  { id: 'tropical-mango',    label: 'Tropical Mango',       emoji: '🥭' },
-  { id: 'strawberry-lemon',  label: 'Strawberry Lemonade',  emoji: '🍓' },
-  { id: 'orange-citrus',     label: 'Orange Citrus',        emoji: '🍊' },
-  { id: 'watermelon-mint',   label: 'Watermelon Mint',      emoji: '🍉' },
-  { id: 'neutral',           label: 'Neutral / Unflavored', emoji: '💧' },
+  {
+    id: 'tropical-mango',
+    label: 'Tropical Mango',
+    shortLabel: 'Mango',
+    gradient: 'linear-gradient(135deg, #f59e0b 0%, #fb923c 50%, #fcd34d 100%)',
+    textColor: '#7c3500',
+  },
+  {
+    id: 'strawberry-lemon',
+    label: 'Strawberry Lemonade',
+    shortLabel: 'Strawberry',
+    gradient: 'linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #fda4af 100%)',
+    textColor: '#881337',
+  },
+  {
+    id: 'orange-citrus',
+    label: 'Orange Citrus',
+    shortLabel: 'Citrus',
+    gradient: 'linear-gradient(135deg, #ea580c 0%, #fb923c 50%, #fed7aa 100%)',
+    textColor: '#7c2d12',
+  },
+  {
+    id: 'watermelon-mint',
+    label: 'Watermelon Mint',
+    shortLabel: 'Watermelon',
+    gradient: 'linear-gradient(135deg, #16a34a 0%, #4ade80 40%, #f43f5e 100%)',
+    textColor: '#14532d',
+  },
+  {
+    id: 'neutral',
+    label: 'Neutral / Unflavored',
+    shortLabel: 'Neutral',
+    gradient: 'linear-gradient(135deg, #374151 0%, #6b7280 50%, #9ca3af 100%)',
+    textColor: '#f9fafb',
+  },
 ];
 
 function Slider({ label, unit, min, max, step = 1, value, onChange, description }) {
@@ -31,28 +61,26 @@ function Slider({ label, unit, min, max, step = 1, value, onChange, description 
   );
 }
 
-// GelBuilder — one instance of the formula builder (used for both training + race day)
-function GelBuilder({ formula, label, accentColor = 'white', quizGenerated = false }) {
+function GelBuilder({ formula, label, quizGenerated = false }) {
   const { addItem } = useCart();
   const { user, saveFormula } = useAuth();
-  const [saved, setSaved]               = useState(false);
-  const [saveMsg, setSaveMsg]           = useState('');
+  const [saved, setSaved]                   = useState(false);
+  const [saveMsg, setSaveMsg]               = useState('');
   const [namePromptOpen, setNamePromptOpen] = useState(false);
-  const [formulaName, setFormulaName]   = useState('');
+  const [formulaName, setFormulaName]       = useState('');
 
-  const [carbs, setCarbs]               = useState(formula?.carbs         ?? 30);
-  const [sodium, setSodium]             = useState(formula?.sodium        ?? 250);
-  const [caffeine, setCaffeine]         = useState(formula?.caffeine      ?? 0);
-  const [thickness, setThickness]       = useState(formula?.thickness     ?? 3);
-  const [fructoseRatio, setFructoseRatio] = useState(formula?.fructoseRatio ?? 0.35);
-  const [potassium, setPotassium]       = useState(100);
-  const [magnesium, setMagnesium]       = useState(20);
-  const [gelQty, setGelQty]             = useState(10);
-  const [gelFlavor, setGelFlavor]       = useState(formula?.flavor        ?? 'Neutral / Unflavored');
-  const [formulaOpen, setFormulaOpen]   = useState(true);
-  const [added, setAdded]               = useState(false);
+  const [carbs, setCarbs]                   = useState(formula?.carbs          ?? 30);
+  const [sodium, setSodium]                 = useState(formula?.sodium         ?? 250);
+  const [caffeine, setCaffeine]             = useState(formula?.caffeine       ?? 0);
+  const [thickness, setThickness]           = useState(formula?.thickness      ?? 3);
+  const [fructoseRatio, setFructoseRatio]   = useState(formula?.fructoseRatio  ?? 0.35);
+  const [potassium, setPotassium]           = useState(100);
+  const [magnesium, setMagnesium]           = useState(20);
+  const [gelQty, setGelQty]                 = useState(10);
+  const [gelFlavor, setGelFlavor]           = useState(formula?.flavor         ?? 'Neutral / Unflavored');
+  const [formulaOpen, setFormulaOpen]       = useState(true);
+  const [added, setAdded]                   = useState(false);
 
-  // Snap sliders when formula prop changes
   useEffect(() => {
     if (!formula) return;
     if (formula.carbs         !== undefined) setCarbs(formula.carbs);
@@ -63,12 +91,11 @@ function GelBuilder({ formula, label, accentColor = 'white', quizGenerated = fal
     if (formula.flavor)                      setGelFlavor(formula.flavor);
   }, [formula]);
 
-  const selectedFlavor  = FLAVORS.find(f => f.label === gelFlavor) || FLAVORS[4];
-  const maltodextrin    = Math.round(carbs * (1 - fructoseRatio));
-  const fructose        = Math.round(carbs * fructoseRatio);
-  const thicknessLabel  = ['', 'Liquid', 'Thin', 'Standard', 'Thick', 'Extra Thick'][thickness] || 'Standard';
+  const selectedFlavor = FLAVORS.find(f => f.label === gelFlavor) || FLAVORS[4];
+  const maltodextrin   = Math.round(carbs * (1 - fructoseRatio));
+  const fructose       = Math.round(carbs * fructoseRatio);
+  const thicknessLabel = ['', 'Liquid', 'Thin', 'Standard', 'Thick', 'Extra Thick'][thickness] || 'Standard';
 
-  // Pricing
   const BASE_PRICE      = 1.20;
   const carbCost        = (maltodextrin * 0.008) + (fructose * 0.016);
   const electrolyteCost = (sodium * 0.0005) + (potassium * 0.001) + (magnesium * 0.002);
@@ -92,7 +119,6 @@ function GelBuilder({ formula, label, accentColor = 'white', quizGenerated = fal
       id:       `gel-${Date.now()}`,
       name:     `${label} (${gelQty} pouches)`,
       subtitle: `${carbs}g carbs · ${sodium}mg sodium${caffeine ? ` · ${caffeine}mg caffeine` : ''} · ${gelFlavor.split(' ')[0]} · $${unitPrice}/pouch`,
-      emoji:    selectedFlavor.emoji,
       price:    gelPrice,
       qty:      1,
     });
@@ -142,7 +168,7 @@ function GelBuilder({ formula, label, accentColor = 'white', quizGenerated = fal
               </button>
               <button onClick={handleConfirmSave}
                 className="flex-1 bg-black text-white py-2.5 rounded-xl text-sm font-bold hover:bg-gray-800 transition">
-                Save →
+                Save
               </button>
             </div>
           </div>
@@ -151,22 +177,24 @@ function GelBuilder({ formula, label, accentColor = 'white', quizGenerated = fal
 
       {added && (
         <span className="absolute top-3 right-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-          ✓ Added!
+          Added to Cart
         </span>
       )}
 
-      {/* Label banner */}
+      {/* Top banner */}
       {isRaceDay ? (
-        <div className="bg-amber-500 text-white text-xs font-bold px-4 py-2 flex items-center gap-2">
-          <span>🏁</span> Race Day Formula — with caffeine
+        <div className="bg-amber-500 text-white text-xs font-bold px-4 py-2.5 tracking-wide">
+          Race Day Formula — caffeine optimized
         </div>
       ) : quizGenerated ? (
-        <div className="bg-green-600 text-white text-xs font-bold px-4 py-2 flex items-center gap-2">
-          <span>🎯</span> Training formula from your quiz — fine-tune below
+        <div className="bg-green-700 text-white text-xs font-bold px-4 py-2.5 tracking-wide">
+          Personalized from your quiz results — fine-tune below
         </div>
       ) : null}
 
       <div className="p-8 pb-4 flex flex-col">
+
+        {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Custom Gel Powder</span>
@@ -184,42 +212,75 @@ function GelBuilder({ formula, label, accentColor = 'white', quizGenerated = fal
             : 'Your formula, mixed fresh. Dial in every variable — carbs, electrolytes, texture — then we mix and ship.'}
         </p>
 
-        {/* Flavor */}
-        <div className="mb-4">
+        {/* Flavor swatches */}
+        <div className="mb-5">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Flavor</p>
           <div className="grid grid-cols-5 gap-1.5">
-            {FLAVORS.map(f => (
-              <button key={f.id} onClick={() => setGelFlavor(f.label)} title={f.label}
-                className={`flex flex-col items-center py-2 rounded-lg border transition-all
-                  ${gelFlavor === f.label ? 'border-white bg-white/10' : 'border-gray-700 hover:border-gray-500'}`}>
-                <span className="text-lg">{f.emoji}</span>
-                <span className="text-gray-400 mt-0.5" style={{ fontSize: '9px' }}>{f.label.split(' ')[0]}</span>
-              </button>
-            ))}
+            {FLAVORS.map(f => {
+              const isSelected = gelFlavor === f.label;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setGelFlavor(f.label)}
+                  title={f.label}
+                  className={`relative rounded-lg overflow-hidden transition-all ${
+                    isSelected
+                      ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105'
+                      : 'opacity-60 hover:opacity-90'
+                  }`}
+                  style={{ background: f.gradient }}
+                >
+                  <div className="h-10" />
+                  <div className="px-1 py-1.5" style={{ background: 'rgba(0,0,0,0.35)' }}>
+                    <p className="text-center font-semibold leading-tight"
+                      style={{ fontSize: '8px', color: '#fff', letterSpacing: '0.03em' }}>
+                      {f.shortLabel}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
+          {/* Full label of selected flavor */}
+          <p className="text-xs text-gray-400 mt-2">
+            Selected: <span className="text-white font-semibold">{selectedFlavor.label}</span>
+          </p>
         </div>
 
         {/* Qty */}
-        <div className="mb-4">
+        <div className="mb-5">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Pouches</p>
           <div className="flex items-center gap-3">
             <button onClick={() => setGelQty(q => Math.max(5, q - 5))}
-              className="w-8 h-8 rounded-full border border-gray-700 font-bold hover:border-white transition flex items-center justify-center text-sm">−</button>
+              className="w-8 h-8 rounded-full border border-gray-700 font-bold hover:border-white transition flex items-center justify-center text-sm">
+              −
+            </button>
             <span className="text-xl font-bold w-8 text-center">{gelQty}</span>
             <button onClick={() => setGelQty(q => Math.min(50, q + 5))}
-              className="w-8 h-8 rounded-full border border-gray-700 font-bold hover:border-white transition flex items-center justify-center text-sm">+</button>
-            <span className="text-gray-500 text-sm ml-1">= <span className="text-white font-bold">${gelPrice.toFixed(2)}</span></span>
+              className="w-8 h-8 rounded-full border border-gray-700 font-bold hover:border-white transition flex items-center justify-center text-sm">
+              +
+            </button>
+            <span className="text-gray-500 text-sm ml-1">
+              = <span className="text-white font-bold">${gelPrice.toFixed(2)}</span>
+            </span>
           </div>
         </div>
 
-        {/* Live formula summary */}
-        <div className="bg-gray-900 rounded-xl p-3 mb-4 text-xs text-gray-300 grid grid-cols-2 gap-1.5">
-          <span>⚡ {carbs}g carbs ({maltodextrin}g + {fructose}g)</span>
-          <span>🧂 {sodium}mg sodium</span>
-          <span>⚗️ {potassium}mg potassium</span>
-          <span>💊 {magnesium}mg magnesium</span>
-          {caffeine > 0 && <span>☕ {caffeine}mg caffeine</span>}
-          <span>💧 {thicknessLabel}</span>
+        {/* Live formula summary — no emojis, clean label grid */}
+        <div className="bg-gray-900 rounded-xl p-3 mb-4 grid grid-cols-2 gap-x-4 gap-y-1.5">
+          {[
+            ['Carbs',      `${carbs}g  (${maltodextrin}g malto + ${fructose}g fructose)`],
+            ['Sodium',     `${sodium}mg`],
+            ['Potassium',  `${potassium}mg`],
+            ['Magnesium',  `${magnesium}mg`],
+            ...(caffeine > 0 ? [['Caffeine', `${caffeine}mg`]] : []),
+            ['Consistency', thicknessLabel],
+          ].map(([k, v]) => (
+            <div key={k} className="flex flex-col">
+              <span className="text-gray-500 text-xs uppercase tracking-widest" style={{ fontSize: '9px' }}>{k}</span>
+              <span className="text-gray-200 text-xs font-semibold">{v}</span>
+            </div>
+          ))}
         </div>
 
         {/* Price breakdown */}
@@ -244,15 +305,16 @@ function GelBuilder({ formula, label, accentColor = 'white', quizGenerated = fal
 
         {/* Toggle formula builder */}
         <button onClick={() => setFormulaOpen(o => !o)}
-          className="w-full border border-gray-700 text-gray-400 py-2.5 rounded-xl font-medium text-sm hover:border-gray-400 hover:text-white transition flex items-center justify-center gap-2">
-          {formulaOpen ? '▲ Hide Formula Builder' : '▼ Customize Formula'}
+          className="w-full border border-gray-700 text-gray-400 py-2.5 rounded-xl font-medium text-sm hover:border-gray-400 hover:text-white transition">
+          {formulaOpen ? 'Hide Formula Builder' : 'Customize Formula'}
         </button>
 
         {formulaOpen && (
           <div className="mt-5">
             <div>
               <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">Carbohydrates</p>
-              <Slider label="Total Carbs" unit="g" min={15} max={90} value={carbs} onChange={setCarbs} description="Per gel serving" />
+              <Slider label="Total Carbs" unit="g" min={15} max={90} value={carbs} onChange={setCarbs}
+                description="Per gel serving" />
               <Slider label="Fructose Ratio" unit="%" min={10} max={50} step={5}
                 value={Math.round(fructoseRatio * 100)} onChange={v => setFructoseRatio(v / 100)}
                 description={`Maltodextrin: ${maltodextrin}g · Fructose: ${fructose}g — lower is gentler on stomach`} />
@@ -291,16 +353,20 @@ function GelBuilder({ formula, label, accentColor = 'white', quizGenerated = fal
         </div>
       </div>
 
+      {/* Footer actions */}
       <div className="p-6 pt-2 space-y-2">
         <button onClick={handleAdd}
           className={`w-full py-3.5 rounded-xl font-bold text-base transition
-            ${added ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-gray-100'}`}>
-          {added ? '✓ Added to Cart!' : `Add to Cart — ${gelQty} pouches · $${gelPrice.toFixed(2)}`}
+            ${added ? 'bg-green-600 text-white' : 'bg-white text-black hover:bg-gray-100'}`}>
+          {added ? 'Added to Cart' : `Add to Cart — ${gelQty} pouches · $${gelPrice.toFixed(2)}`}
         </button>
         <button onClick={handleSaveFormula}
-          className={`w-full py-2.5 rounded-xl font-medium text-sm transition flex items-center justify-center gap-1.5
-            ${saved ? 'bg-green-900 text-green-300 border border-green-700' : 'border border-gray-700 text-gray-400 hover:border-gray-400 hover:text-white'}`}>
-          {saved ? '✓ Saved!' : '🔖 Save Formula'}
+          className={`w-full py-2.5 rounded-xl font-medium text-sm transition
+            ${saved
+              ? 'bg-green-900 text-green-300 border border-green-700'
+              : 'border border-gray-700 text-gray-400 hover:border-gray-400 hover:text-white'
+            }`}>
+          {saved ? 'Formula Saved' : 'Save Formula'}
         </button>
         {saveMsg && (
           <p className={`text-xs text-center ${saveMsg.includes('Sign in') ? 'text-amber-400' : 'text-green-400'}`}>
@@ -312,29 +378,17 @@ function GelBuilder({ formula, label, accentColor = 'white', quizGenerated = fal
   );
 }
 
-// ── Main export — renders one or two builders depending on quiz result ─────────
 export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) {
-  // quizFormula shape from Quiz.js:
-  //   { main: FormulaObject, raceDay?: FormulaObject, raceDaySkipped?: boolean }
-  // Legacy shape (direct formula object with no .main) also supported
-  const hasNewShape = quizFormula && quizFormula.main !== undefined;
-  const mainFormula = hasNewShape ? quizFormula.main : quizFormula;
+  const hasNewShape    = quizFormula && quizFormula.main !== undefined;
+  const mainFormula    = hasNewShape ? quizFormula.main    : quizFormula;
   const raceDayFormula = hasNewShape ? quizFormula.raceDay : null;
-  const quizGenerated = !!quizFormula;
+  const quizGenerated  = !!quizFormula;
 
   return (
     <div className="space-y-6">
-      <GelBuilder
-        formula={mainFormula}
-        label="Custom Gel Powder"
-        quizGenerated={quizGenerated}
-      />
+      <GelBuilder formula={mainFormula}    label="Custom Gel Powder" quizGenerated={quizGenerated} />
       {raceDayFormula && (
-        <GelBuilder
-          formula={raceDayFormula}
-          label="Race Day Gel"
-          quizGenerated={true}
-        />
+        <GelBuilder formula={raceDayFormula} label="Race Day Gel"      quizGenerated={true} />
       )}
     </div>
   );
