@@ -78,19 +78,6 @@ const FAQS = [
 
 // ── Bamboo SVG Background ─────────────────────────────────────────────────────
 function BambooBackground() {
-  // Each stalk: [centerX (0-1000), width, topY (0=bottom, higher=taller), opacity]
-  const stalks = [
-    [22,  16, 90, 0.55], [55,  11, 70, 0.35], [95,  20, 95, 0.65],
-    [138, 13, 75, 0.40], [175, 22, 100,0.70], [218, 10, 60, 0.30],
-    [260, 17, 85, 0.55], [305, 12, 68, 0.38], [348, 24, 98, 0.72],
-    [390, 14, 80, 0.48], [428, 11, 58, 0.28], [465, 19, 92, 0.60],
-    [510, 13, 72, 0.40], [550, 21, 96, 0.68], [592, 15, 78, 0.45],
-    [630, 10, 55, 0.26], [668, 18, 88, 0.58], [710, 12, 66, 0.36],
-    [748, 23, 97, 0.70], [790, 14, 74, 0.42], [830, 11, 62, 0.32],
-    [868, 20, 91, 0.62], [908, 13, 70, 0.38], [945, 16, 82, 0.50],
-    [978, 9,  50, 0.22],
-  ];
-
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
 
@@ -132,92 +119,6 @@ function BambooBackground() {
         filter: 'blur(70px)',
       }} />
 
-      {/* Bamboo SVG */}
-      <svg
-        viewBox="0 0 1000 800"
-        preserveAspectRatio="xMidYMax slice"
-        style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '75%' }}
-      >
-        <defs>
-          <linearGradient id="sg" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%"   stopColor="#102e14" />
-            <stop offset="35%"  stopColor="#1d5c22" />
-            <stop offset="65%"  stopColor="#245a28" />
-            <stop offset="100%" stopColor="#0c2010" />
-          </linearGradient>
-          <linearGradient id="ng" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="#2e7034" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#071509" stopOpacity="0.6" />
-          </linearGradient>
-          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%"   stopColor="#1a5c1e" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#0a2e0d" stopOpacity="0.4" />
-          </linearGradient>
-          <filter id="sf" x="-20%" y="-5%" width="140%" height="110%">
-            <feDropShadow dx="3" dy="0" stdDeviation="4" floodColor="#000" floodOpacity="0.5" />
-          </filter>
-        </defs>
-
-        {stalks.map(([cx, w, hPct, op], i) => {
-          const totalH = 800;
-          const stalkH = (hPct / 100) * totalH;
-          const topY   = totalH - stalkH;
-          const segs   = Math.max(3, Math.round(hPct / 18));
-          const segH   = stalkH / segs;
-
-          return (
-            <g key={i} opacity={op} filter="url(#sf)">
-              {/* Stalk body */}
-              <rect x={cx - w/2} y={topY} width={w} height={stalkH} rx={w * 0.45} fill="url(#sg)" />
-
-              {/* Highlight stripe */}
-              <rect
-                x={cx - w/2 + w * 0.2} y={topY + w}
-                width={w * 0.18} height={stalkH - w * 2}
-                rx={w * 0.09}
-                fill="rgba(255,255,255,0.06)"
-              />
-
-              {/* Segment nodes */}
-              {Array.from({ length: segs - 1 }, (_, j) => {
-                const ny = topY + segH * (j + 1);
-                const leafRight = (j + i) % 2 === 0;
-                const lx = leafRight ? cx + w/2 : cx - w/2;
-                const lAngle = leafRight ? -30 : 30;
-                return (
-                  <g key={j}>
-                    {/* Node ring */}
-                    <rect
-                      x={cx - w/2 - 2.5} y={ny - 3.5}
-                      width={w + 5} height={7}
-                      rx={3.5} fill="url(#ng)"
-                    />
-                    {/* Leaf pair every other node */}
-                    {j % 2 === 0 && (
-                      <g transform={`translate(${lx}, ${ny - 6}) rotate(${lAngle})`}>
-                        <ellipse cx={leafRight ? 20 : -20} cy={-4} rx={28} ry={5.5} fill="url(#lg)" />
-                        <ellipse cx={leafRight ? 14 : -14} cy={-9} rx={20} ry={4} fill="url(#lg)" opacity={0.7} />
-                      </g>
-                    )}
-                  </g>
-                );
-              })}
-
-              {/* Rounded tip */}
-              <ellipse cx={cx} cy={topY + w * 0.5} rx={w/2} ry={w * 0.7} fill="#122a16" opacity={0.7} />
-            </g>
-          );
-        })}
-
-        {/* Ground fog / fade */}
-        <defs>
-          <linearGradient id="gf" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="transparent" />
-            <stop offset="100%" stopColor="#030d05" stopOpacity="0.95" />
-          </linearGradient>
-        </defs>
-        <rect x="0" y="640" width="1000" height="160" fill="url(#gf)" />
-      </svg>
 
       {/* Radial vignette */}
       <div style={{
