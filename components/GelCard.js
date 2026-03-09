@@ -231,9 +231,9 @@ function GelBuilder({ formula, label, quizGenerated = false }) {
                   style={{ background: f.gradient }}
                 >
                   <div className="h-10" />
-                  <div className="px-1 py-1.5" style={{ background: 'rgba(0,0,0,0.35)' }}>
-                    <p className="text-center font-semibold leading-tight"
-                      style={{ fontSize: '8px', color: '#fff', letterSpacing: '0.03em' }}>
+                  <div className="px-1 py-2" style={{ background: 'rgba(0,0,0,0.55)' }}>
+                    <p className="text-center font-bold leading-tight"
+                      style={{ fontSize: '10px', color: '#ffffff', letterSpacing: '0.02em' }}>
                       {f.shortLabel}
                     </p>
                   </div>
@@ -347,7 +347,7 @@ function GelBuilder({ formula, label, quizGenerated = false }) {
         )}
 
         <div className="flex flex-wrap gap-2 mt-4">
-          {['Customizable formula', 'Mixed fresh', 'Free shipping $50+'].map(t => (
+          {['Customizable formula', 'Mixed fresh', 'Free shipping $40+'].map(t => (
             <span key={t} className="text-xs bg-gray-800 text-gray-300 px-2.5 py-1 rounded-full">{t}</span>
           ))}
         </div>
