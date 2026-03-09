@@ -73,9 +73,54 @@ function QuizLanding({ onChoose }) {
   );
 }
 
+// ── Banned Wall ───────────────────────────────────────────────────────────────
+function BannedWall({ banReason, banExpires }) {
+  const expiryDate = banExpires
+    ? new Date(banExpires).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null;
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8 text-center">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-5">
+          🚫
+        </div>
+        <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Account Suspended</h1>
+        <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+          Your account has been suspended from ReFuel Athletics.
+        </p>
+        {banReason && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-5 text-left">
+            <p className="text-xs font-bold uppercase tracking-widest text-red-400 mb-1">Reason</p>
+            <p className="text-sm text-gray-700 leading-relaxed">{banReason}</p>
+          </div>
+        )}
+        <div className="bg-gray-50 rounded-2xl px-5 py-4 mb-6 text-left space-y-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">What you can do</p>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            You have until <strong>{expiryDate ?? '2 weeks from your ban date'}</strong> to submit an unban appeal by emailing us.
+            If no appeal is received or accepted, your account will be permanently deleted.
+          </p>
+        </div>
+        <a href="mailto:haydenh.refuel@gmail.com?subject=Unban Appeal&body=Hi, I would like to appeal my account suspension.%0A%0AMy reason for requesting an unban:%0A"
+          className="inline-block w-full bg-black text-white font-bold py-3.5 rounded-2xl hover:bg-gray-800 transition text-sm">
+          Submit Appeal via Email →
+        </a>
+        <p className="text-xs text-gray-400 mt-4">haydenh.refuel@gmail.com</p>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 function PageContent() {
   const { user } = useAuth();
+
+  // Show ban wall if this user is banned — replaces entire app
+  if (user?.banned) {
+    return <BannedWall banReason={user.banReason} banExpires={user.banExpires} />;
+  }
+
+
   const [activeTab, setActiveTab]       = useState('home');
   const [activeProduct, setActiveProduct] = useState(null);
   const [quizFormula, setQuizFormula]   = useState(null);

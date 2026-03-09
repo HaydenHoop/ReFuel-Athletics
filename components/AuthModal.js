@@ -114,6 +114,10 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }) {
       setLoading(true);
       const result = await signIn({ email, password });
       setLoading(false);
+      if (result.banned) {
+        setError('Your account has been suspended. Please check your email for details.');
+        return;
+      }
       if (result.error) { setError(result.error); return; }
       onClose();
     }

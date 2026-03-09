@@ -26,10 +26,17 @@ export function AuthProvider({ children }) {
     const fetchProfile = (userId) => {
       supabase
         .from('profiles')
-        .select('is_pro, pro_status, avatar_url')
+        .select('is_pro, pro_status, avatar_url, ban_status, ban_reason, ban_expires')
         .eq('user_id', userId)
         .maybeSingle()
         .then(({ data: profile }) => {
+          // If banned, sign out immediately and surface banned state to UI
+          if (profile?.ban_status === 'banned') {
+            supabase.auth.signOut();
+            setUser({ banned: true, banReason: profile.ban_reason || null, banExpires: profile.ban_expires || null });
+            setLoading(false);
+            return;
+          }
           if (!profile) return;
           setUser(prev => {
             if (!prev || prev.id !== userId) return prev; // guard stale update
@@ -91,6 +98,20 @@ export function AuthProvider({ children }) {
     if (error) {
       if (error.message.includes('Invalid login')) return { error: 'Incorrect email or password.' };
       return { error: error.message };
+    }
+    // Check ban status before allowing through
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('ban_status, ban_reason, ban_expires')
+        .eq('user_id', authUser.id)
+        .maybeSingle();
+      if (profile?.ban_status === 'banned') {
+        await supabase.auth.signOut();
+        setUser({ banned: true, banReason: profile.ban_reason || null, banExpires: profile.ban_expires || null });
+        return { banned: true, banReason: profile.ban_reason };
+      }
     }
     return { success: true };
   }, []);
