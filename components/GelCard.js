@@ -378,11 +378,22 @@ function GelBuilder({ formula, label, quizGenerated = false }) {
   );
 }
 
-export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz }) {
+export default function GelCard({ quizFormula, startOpen = false, onGoToQuiz, raceDayOnly = false }) {
   const hasNewShape    = quizFormula && quizFormula.main !== undefined;
   const mainFormula    = hasNewShape ? quizFormula.main    : quizFormula;
   const raceDayFormula = hasNewShape ? quizFormula.raceDay : null;
   const quizGenerated  = !!quizFormula;
+
+  // Race day only mode — only show the race day builder (used from shop "Customize" on Race Day Gel)
+  if (raceDayOnly) {
+    return (
+      <GelBuilder
+        formula={raceDayFormula ?? { caffeine: 75, carbs: 45, sodium: 300, thickness: 3, fructoseRatio: 0.35, flavor: 'Neutral / Unflavored' }}
+        label="Race Day Gel"
+        quizGenerated={quizGenerated}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

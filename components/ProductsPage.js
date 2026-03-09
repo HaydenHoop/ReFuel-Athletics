@@ -271,7 +271,7 @@ function HeroBanner({ reverse, gradient, placeholderLabel, title, subtitle, cta,
 }
 
 // ── Page — modal state lives here, completely outside cards ───────────────────
-export default function ProductsPage({ onGoToQuiz, onViewProduct }) {
+export default function ProductsPage({ onGoToQuiz, onGoToRaceDayQuiz, onViewProduct }) {
   const { addItem } = useCart();
   const [modal, setModal] = useState(null); // { reviews, avg, total, productName }
 
@@ -336,7 +336,13 @@ export default function ProductsPage({ onGoToQuiz, onViewProduct }) {
               product={product}
               onViewProduct={(id) => onViewProduct && onViewProduct(id)}
               onAddToCart={handleAddToCart}
-              onCustomize={() => onGoToQuiz && onGoToQuiz()}
+              onCustomize={(product) => {
+              if (product.id === 'race-day' && onGoToRaceDayQuiz) {
+                onGoToRaceDayQuiz();
+              } else {
+                onGoToQuiz && onGoToQuiz();
+              }
+            }}
               onOpenModal={setModal}
             />
           ))}

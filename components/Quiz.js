@@ -155,11 +155,11 @@ function buildRaceDayFormula(mainAnswers, rdAnswers) {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function Quiz({ onComplete }) {
+export default function Quiz({ onComplete, raceDayOnly = false }) {
   const [step, setStep]           = useState(0);
   const [answers, setAnswers]     = useState({});
   const [selected, setSelected]   = useState(null);
-  const [phase, setPhase]         = useState('main'); // 'main' | 'race-day-intro' | 'race-day'
+  const [phase, setPhase]         = useState(raceDayOnly ? 'race-day' : 'main'); // 'main' | 'race-day-intro' | 'race-day'
   const [rdStep, setRdStep]       = useState(0);
   const [rdAnswers, setRdAnswers] = useState({});
 
