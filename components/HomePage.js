@@ -116,7 +116,7 @@ export default function HomePage({ onTabChange }) {
           ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
 
           <p className="text-xs font-bold uppercase tracking-[0.35em] text-white/40 mb-8">
-            By Athletes, For Athletes
+            Reduce - Reuse - ReFuel
           </p>
 
           <h1 className="text-white font-black leading-none tracking-tight mb-8 select-none"

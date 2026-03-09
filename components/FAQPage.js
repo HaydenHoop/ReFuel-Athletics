@@ -76,91 +76,378 @@ const FAQS = [
   },
 ];
 
+// ── Bamboo SVG Background ─────────────────────────────────────────────────────
+function BambooBackground() {
+  // Each stalk: [centerX (0-1000), width, topY (0=bottom, higher=taller), opacity]
+  const stalks = [
+    [22,  16, 90, 0.55], [55,  11, 70, 0.35], [95,  20, 95, 0.65],
+    [138, 13, 75, 0.40], [175, 22, 100,0.70], [218, 10, 60, 0.30],
+    [260, 17, 85, 0.55], [305, 12, 68, 0.38], [348, 24, 98, 0.72],
+    [390, 14, 80, 0.48], [428, 11, 58, 0.28], [465, 19, 92, 0.60],
+    [510, 13, 72, 0.40], [550, 21, 96, 0.68], [592, 15, 78, 0.45],
+    [630, 10, 55, 0.26], [668, 18, 88, 0.58], [710, 12, 66, 0.36],
+    [748, 23, 97, 0.70], [790, 14, 74, 0.42], [830, 11, 62, 0.32],
+    [868, 20, 91, 0.62], [908, 13, 70, 0.38], [945, 16, 82, 0.50],
+    [978, 9,  50, 0.22],
+  ];
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+
+      {/* Deep forest base */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: `
+          radial-gradient(ellipse at 30% 20%, rgba(22,58,26,0.6) 0%, transparent 55%),
+          radial-gradient(ellipse at 70% 60%, rgba(14,42,18,0.5) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 90%, rgba(8,28,10,0.8) 0%, transparent 60%),
+          linear-gradient(170deg, #071a09 0%, #0c2a10 30%, #0f3318 60%, #071408 100%)
+        `,
+      }} />
+
+      {/* Subtle noise/grain texture overlay */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E")`,
+        opacity: 0.4,
+      }} />
+
+      {/* Ambient glow pools */}
+      <div style={{
+        position: 'absolute', top: '5%', left: '15%',
+        width: '600px', height: '600px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(30,90,35,0.14) 0%, transparent 65%)',
+        filter: 'blur(50px)',
+      }} />
+      <div style={{
+        position: 'absolute', top: '40%', right: '10%',
+        width: '450px', height: '450px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(18,65,22,0.12) 0%, transparent 65%)',
+        filter: 'blur(60px)',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '15%', left: '35%',
+        width: '700px', height: '350px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(12,48,16,0.10) 0%, transparent 65%)',
+        filter: 'blur(70px)',
+      }} />
+
+      {/* Bamboo SVG */}
+      <svg
+        viewBox="0 0 1000 800"
+        preserveAspectRatio="xMidYMax slice"
+        style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '75%' }}
+      >
+        <defs>
+          <linearGradient id="sg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stopColor="#102e14" />
+            <stop offset="35%"  stopColor="#1d5c22" />
+            <stop offset="65%"  stopColor="#245a28" />
+            <stop offset="100%" stopColor="#0c2010" />
+          </linearGradient>
+          <linearGradient id="ng" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="#2e7034" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#071509" stopOpacity="0.6" />
+          </linearGradient>
+          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%"   stopColor="#1a5c1e" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#0a2e0d" stopOpacity="0.4" />
+          </linearGradient>
+          <filter id="sf" x="-20%" y="-5%" width="140%" height="110%">
+            <feDropShadow dx="3" dy="0" stdDeviation="4" floodColor="#000" floodOpacity="0.5" />
+          </filter>
+        </defs>
+
+        {stalks.map(([cx, w, hPct, op], i) => {
+          const totalH = 800;
+          const stalkH = (hPct / 100) * totalH;
+          const topY   = totalH - stalkH;
+          const segs   = Math.max(3, Math.round(hPct / 18));
+          const segH   = stalkH / segs;
+
+          return (
+            <g key={i} opacity={op} filter="url(#sf)">
+              {/* Stalk body */}
+              <rect x={cx - w/2} y={topY} width={w} height={stalkH} rx={w * 0.45} fill="url(#sg)" />
+
+              {/* Highlight stripe */}
+              <rect
+                x={cx - w/2 + w * 0.2} y={topY + w}
+                width={w * 0.18} height={stalkH - w * 2}
+                rx={w * 0.09}
+                fill="rgba(255,255,255,0.06)"
+              />
+
+              {/* Segment nodes */}
+              {Array.from({ length: segs - 1 }, (_, j) => {
+                const ny = topY + segH * (j + 1);
+                const leafRight = (j + i) % 2 === 0;
+                const lx = leafRight ? cx + w/2 : cx - w/2;
+                const lAngle = leafRight ? -30 : 30;
+                return (
+                  <g key={j}>
+                    {/* Node ring */}
+                    <rect
+                      x={cx - w/2 - 2.5} y={ny - 3.5}
+                      width={w + 5} height={7}
+                      rx={3.5} fill="url(#ng)"
+                    />
+                    {/* Leaf pair every other node */}
+                    {j % 2 === 0 && (
+                      <g transform={`translate(${lx}, ${ny - 6}) rotate(${lAngle})`}>
+                        <ellipse cx={leafRight ? 20 : -20} cy={-4} rx={28} ry={5.5} fill="url(#lg)" />
+                        <ellipse cx={leafRight ? 14 : -14} cy={-9} rx={20} ry={4} fill="url(#lg)" opacity={0.7} />
+                      </g>
+                    )}
+                  </g>
+                );
+              })}
+
+              {/* Rounded tip */}
+              <ellipse cx={cx} cy={topY + w * 0.5} rx={w/2} ry={w * 0.7} fill="#122a16" opacity={0.7} />
+            </g>
+          );
+        })}
+
+        {/* Ground fog / fade */}
+        <defs>
+          <linearGradient id="gf" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="transparent" />
+            <stop offset="100%" stopColor="#030d05" stopOpacity="0.95" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="640" width="1000" height="160" fill="url(#gf)" />
+      </svg>
+
+      {/* Radial vignette */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(ellipse at 50% 40%, transparent 25%, rgba(0,0,0,0.5) 85%, rgba(0,0,0,0.7) 100%)',
+      }} />
+
+      {/* Top content fade */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '160px',
+        background: 'linear-gradient(to bottom, rgba(5,16,7,0.65) 0%, transparent 100%)',
+      }} />
+    </div>
+  );
+}
+
+// ── FAQ Item ──────────────────────────────────────────────────────────────────
 function FAQItem({ q, a }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className={`border rounded-2xl overflow-hidden transition-all duration-200 ${open ? 'border-gray-300 shadow-sm' : 'border-gray-100'}`}>
+    <div style={{
+      borderRadius: '14px', overflow: 'hidden',
+      border: open ? '1px solid rgba(90,185,100,0.22)' : '1px solid rgba(255,255,255,0.07)',
+      background: open ? 'rgba(12,32,15,0.68)' : 'rgba(8,20,10,0.48)',
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+      boxShadow: open
+        ? '0 6px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(90,185,100,0.12)'
+        : '0 2px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03)',
+      transition: 'all 0.22s ease',
+    }}>
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-start justify-between gap-4 px-6 py-5 text-left hover:bg-gray-50 transition-colors"
+        style={{
+          width: '100%', display: 'flex', alignItems: 'flex-start',
+          justifyContent: 'space-between', gap: '16px',
+          padding: '18px 22px', textAlign: 'left',
+          background: 'transparent', border: 'none', cursor: 'pointer',
+        }}
       >
-        <span className={`text-sm font-semibold leading-snug transition-colors ${open ? 'text-gray-900' : 'text-gray-700'}`}>
+        <span style={{
+          fontSize: '13.5px', fontWeight: 600, lineHeight: 1.55,
+          color: open ? '#b8edbe' : 'rgba(200,235,205,0.80)',
+          transition: 'color 0.2s',
+        }}>
           {q}
         </span>
-        <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all
-          ${open ? 'bg-black text-white rotate-45' : 'bg-gray-100 text-gray-500'}`}
-          style={{ transform: open ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
-        >
+        <span style={{
+          flexShrink: 0, width: '22px', height: '22px', borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '13px', fontWeight: 700,
+          background: open ? 'rgba(60,160,70,0.28)' : 'rgba(255,255,255,0.07)',
+          color: open ? '#80d885' : 'rgba(255,255,255,0.35)',
+          border: open ? '1px solid rgba(80,180,90,0.30)' : '1px solid rgba(255,255,255,0.09)',
+          transform: open ? 'rotate(45deg)' : 'rotate(0deg)',
+          transition: 'all 0.22s ease',
+        }}>
           +
         </span>
       </button>
       {open && (
-        <div className="px-6 pb-5">
-          <div className="w-full h-px bg-gray-100 mb-4" />
-          <p className="text-sm text-gray-600 leading-relaxed">{a}</p>
+        <div style={{ padding: '0 22px 18px' }}>
+          <div style={{
+            width: '100%', height: '1px',
+            background: 'linear-gradient(to right, rgba(80,180,90,0.25), transparent)',
+            marginBottom: '14px',
+          }} />
+          <p style={{
+            fontSize: '13px', color: 'rgba(165,215,172,0.78)',
+            lineHeight: 1.8, margin: 0,
+          }}>
+            {a}
+          </p>
         </div>
       )}
     </div>
   );
 }
 
+// ── Main FAQ Page ─────────────────────────────────────────────────────────────
 export default function FAQPage({ onGoToQuiz }) {
   const [activeCategory, setActiveCategory] = useState(FAQS[0].category);
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
+    <div style={{ position: 'relative', minHeight: '100vh' }}>
+      <BambooBackground />
 
-      {/* Header */}
-      <div className="mb-10 text-center">
-        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Got Questions?</p>
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">FAQ</h1>
-        <p className="text-gray-500 max-w-lg mx-auto">
-          Everything you need to know about our gel formulas and reusable packet. Can't find what you're looking for?{' '}
-          <a href="mailto:haydenh.refuel@gmail.com" className="text-black font-semibold underline hover:no-underline">
-            Email us directly.
-          </a>
-        </p>
-      </div>
+      <div style={{
+        position: 'relative', zIndex: 1,
+        width: '100%', maxWidth: '700px',
+        margin: '0 auto', padding: '52px 20px 88px',
+      }}>
 
-      {/* Category tabs */}
-      <div className="flex gap-2 mb-8 bg-gray-100 p-1 rounded-2xl">
-        {FAQS.map(section => (
-          <button
-            key={section.category}
-            onClick={() => setActiveCategory(section.category)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-xl transition-all
-              ${activeCategory === section.category ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            <span>{section.icon}</span>
-            <span className="hidden sm:inline">{section.category}</span>
-            <span className="sm:hidden">{section.category.split(' ')[0]}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Questions */}
-      {FAQS.filter(s => s.category === activeCategory).map(section => (
-        <div key={section.category} className="space-y-3">
-          {section.questions.map(item => (
-            <FAQItem key={item.q} q={item.q} a={item.a} />
-          ))}
+        {/* Header */}
+        <div style={{ marginBottom: '44px', textAlign: 'center' }}>
+          <p style={{
+            fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'rgba(110,195,120,0.65)',
+            marginBottom: '10px', margin: '0 0 10px',
+          }}>
+            Got Questions?
+          </p>
+          <h1 style={{
+            fontSize: 'clamp(40px, 7vw, 60px)', fontWeight: 900,
+            color: '#dff0e2', letterSpacing: '-0.025em',
+            margin: '0 0 16px',
+            textShadow: '0 2px 30px rgba(0,0,0,0.6)',
+          }}>
+            FAQ
+          </h1>
+          <p style={{
+            fontSize: '14px', color: 'rgba(150,205,158,0.72)',
+            lineHeight: 1.75, maxWidth: '440px', margin: '0 auto',
+          }}>
+            Everything you need to know about our gel formulas and reusable packet. Can't find what you're looking for?{' '}
+            <a
+              href="mailto:haydenh.refuel@gmail.com"
+              style={{
+                color: '#7bd880', fontWeight: 600,
+                textDecoration: 'underline',
+                textDecorationColor: 'rgba(123,216,128,0.35)',
+              }}
+            >
+              Email us directly.
+            </a>
+          </p>
         </div>
-      ))}
 
-      {/* Bottom CTA */}
-      <div className="mt-12 bg-black text-white rounded-2xl p-8 text-center">
-        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Still unsure?</p>
-        <h3 className="text-xl font-extrabold mb-2">Let the quiz decide for you.</h3>
-        <p className="text-gray-400 text-sm mb-5">
-          Answer 7 questions and we'll build a formula matched to your sport, sweat rate, and gut.
-        </p>
-        <button
-          onClick={onGoToQuiz}
-          className="inline-block bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition text-sm">
-          Take the Diagnostic →
-        </button>
+        {/* Glass tab switcher */}
+        <div style={{
+          display: 'flex', gap: '5px', marginBottom: '24px',
+          background: 'rgba(4,12,5,0.60)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: '16px', padding: '4px',
+          boxShadow: '0 4px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
+        }}>
+          {FAQS.map(section => {
+            const active = activeCategory === section.category;
+            return (
+              <button
+                key={section.category}
+                onClick={() => setActiveCategory(section.category)}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', gap: '8px',
+                  padding: '10px 14px', borderRadius: '12px',
+                  border: active ? '1px solid rgba(80,175,92,0.22)' : '1px solid transparent',
+                  background: active ? 'rgba(22,68,28,0.75)' : 'transparent',
+                  color: active ? '#a8e4ae' : 'rgba(140,195,148,0.50)',
+                  fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: active
+                    ? '0 2px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(100,200,110,0.12)'
+                    : 'none',
+                }}
+              >
+                <span style={{ fontSize: '15px' }}>{section.icon}</span>
+                <span className="hidden sm:inline">{section.category}</span>
+                <span className="sm:hidden">{section.category.split(' ')[0]}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* FAQ items */}
+        {FAQS.filter(s => s.category === activeCategory).map(section => (
+          <div key={section.category} style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+            {section.questions.map(item => (
+              <FAQItem key={item.q} q={item.q} a={item.a} />
+            ))}
+          </div>
+        ))}
+
+        {/* Bottom CTA */}
+        <div style={{
+          marginTop: '52px', borderRadius: '22px', padding: '38px 32px',
+          textAlign: 'center',
+          background: 'rgba(6,18,8,0.72)',
+          backdropFilter: 'blur(22px)',
+          WebkitBackdropFilter: 'blur(22px)',
+          border: '1px solid rgba(80,175,92,0.18)',
+          boxShadow: '0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(90,185,100,0.08)',
+        }}>
+          <p style={{
+            fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.14em',
+            textTransform: 'uppercase', color: 'rgba(110,195,120,0.55)',
+            margin: '0 0 10px',
+          }}>
+            Still unsure?
+          </p>
+          <h3 style={{
+            fontSize: '21px', fontWeight: 800, color: '#dff0e2',
+            margin: '0 0 10px', letterSpacing: '-0.01em',
+          }}>
+            Let the quiz decide for you.
+          </h3>
+          <p style={{
+            fontSize: '13px', color: 'rgba(150,205,158,0.65)',
+            margin: '0 0 26px', lineHeight: 1.65,
+          }}>
+            Answer 7 questions and we'll build a formula matched to your sport, sweat rate, and gut.
+          </p>
+          <button
+            onClick={onGoToQuiz}
+            style={{
+              background: 'linear-gradient(135deg, #285c2c 0%, #1b4a1f 100%)',
+              color: '#c8eecb', padding: '13px 30px',
+              borderRadius: '11px', fontWeight: 700, fontSize: '13.5px',
+              border: '1px solid rgba(80,175,92,0.28)',
+              cursor: 'pointer',
+              boxShadow: '0 4px 22px rgba(0,0,0,0.45), inset 0 1px 0 rgba(140,220,148,0.18)',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #316834 0%, #225a26 100%)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 6px 28px rgba(0,0,0,0.5), inset 0 1px 0 rgba(140,220,148,0.2)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #285c2c 0%, #1b4a1f 100%)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 22px rgba(0,0,0,0.45), inset 0 1px 0 rgba(140,220,148,0.18)';
+            }}
+          >
+            Take the Diagnostic →
+          </button>
+        </div>
       </div>
-
     </div>
   );
 }
