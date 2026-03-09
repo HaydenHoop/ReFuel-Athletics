@@ -135,7 +135,7 @@ function PageContent() {
       <CheckoutModal isOpen={checkoutOpen} onClose={() => setCheckoutOpen(false)} onViewAccount={() => setActiveTab('account')} />
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode={authMode} />
 
-      <main className="flex flex-col items-center px-4 py-12">
+      <main className="flex flex-col items-center px-4 pt-[100px] pb-12">
 
         {/* Shop */}
         {activeTab === 'products' && !activeProduct && (
@@ -149,13 +149,11 @@ function PageContent() {
 
         {/* Product Detail */}
         {activeTab === 'product-detail' && (
-          <div className="flex flex-col items-center px-4 py-12 pt-[100px] w-full">
-            <ProductDetailPage
-              productId={activeProduct}
-              onBack={() => { setActiveProduct(null); setActiveTab('products'); }}
-              onGoToQuiz={goToQuiz}
-            />
-          </div>
+          <ProductDetailPage
+            productId={activeProduct}
+            onBack={() => { setActiveProduct(null); setActiveTab('products'); }}
+            onGoToQuiz={goToQuiz}
+          />
         )}
 
         {/* Find Your Gel */}
