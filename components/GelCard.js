@@ -226,14 +226,14 @@ function GelBuilder({ formula, label, quizGenerated = false }) {
                   className={`relative rounded-lg overflow-hidden transition-all ${
                     isSelected
                       ? 'ring-2 ring-white ring-offset-2 ring-offset-black scale-105'
-                      : 'opacity-60 hover:opacity-90'
+                      : 'opacity-80 hover:opacity-100'
                   }`}
                   style={{ background: f.gradient }}
                 >
-                  <div className="h-10" />
-                  <div className="px-1 py-2" style={{ background: 'rgba(0,0,0,0.55)' }}>
-                    <p className="text-center font-bold leading-tight"
-                      style={{ fontSize: '10px', color: '#ffffff', letterSpacing: '0.02em' }}>
+                  <div className="h-12" />
+                  <div className="px-1 py-2.5" style={{ background: 'rgba(0,0,0,0.75)' }}>
+                    <p className="text-center font-black leading-tight"
+                      style={{ fontSize: '13px', color: '#ffffff', letterSpacing: '0.01em', textShadow: '0 1px 6px rgba(0,0,0,1)' }}>
                       {f.shortLabel}
                     </p>
                   </div>
