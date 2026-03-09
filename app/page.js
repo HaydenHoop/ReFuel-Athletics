@@ -109,6 +109,7 @@ function PageContent() {
     // Only reset to landing when leaving quiz entirely and there's no formula saved
     if (tab !== 'quiz' && !quizFormula) setQuizMode('landing');
     setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const RACE_DAY_DEFAULT = {
