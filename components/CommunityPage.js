@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { useCommunity } from './CommunityContext';
 import { Avatar, ProBadge } from './ProAthleteModal';
+import FormulaCompare from './FormulaCompare';
 import { supabase } from '../lib/supabase';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -299,12 +300,13 @@ function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
 // ── Formula Detail Modal ──────────────────────────────────────────────────────
 function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   const { getFormula, toggleLike, addComment, deleteComment, deleteFormula } = useCommunity();
-  const [formula, setFormula]         = useState(null);
+  const [formula, setFormula]             = useState(null);
   const [authorProfile, setAuthorProfile] = useState(null);
-  const [comment, setComment]         = useState('');
-  const [copied, setCopied]           = useState(false);
-  const [submitting, setSubmit]       = useState(false);
-  const commentRef                    = useRef(null);
+  const [comment, setComment]             = useState('');
+  const [copied, setCopied]               = useState(false);
+  const [submitting, setSubmit]           = useState(false);
+  const [comparing, setComparing]         = useState(false);
+  const commentRef                        = useRef(null);
 
   useEffect(() => { getFormula(formulaId).then(setFormula); }, [formulaId]);
 
@@ -389,7 +391,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
             <FormulaChips formula={formula} />
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <button onClick={handleLike}
               className={`flex flex-col items-center gap-1 py-3 rounded-xl border transition font-semibold text-sm
                 ${liked ? 'bg-red-50 border-red-200 text-red-500' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
@@ -403,6 +405,13 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
               </svg>
               <span className="text-xs">Load</span>
             </button>
+            <button onClick={() => setComparing(true)}
+              className="flex flex-col items-center gap-1 py-3 rounded-xl border border-gray-200 text-gray-500 hover:border-black hover:text-black transition font-semibold text-sm">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+              <span className="text-xs">Compare</span>
+            </button>
             <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}?formula=${formulaId}`); setCopied(true); setTimeout(() => setCopied(false), 2500); }}
               className={`flex flex-col items-center gap-1 py-3 rounded-xl border transition font-semibold text-sm
                 ${copied ? 'bg-green-50 border-green-200 text-green-600' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
@@ -410,6 +419,14 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
               <span className="text-xs">{copied ? 'Copied!' : 'Share'}</span>
             </button>
           </div>
+
+          {comparing && (
+            <FormulaCompare
+              formulaA={formula}
+              titleA={formula.name}
+              onClose={() => setComparing(false)}
+            />
+          )}
 
           {isOwner && (
             <button onClick={handleDelete} className="w-full text-xs text-red-400 hover:text-red-600 transition py-1">
