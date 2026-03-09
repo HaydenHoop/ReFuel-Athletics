@@ -92,7 +92,7 @@ function Leaderboard({ formulas, authorProfiles }) {
               </span>
               <Avatar url={profile?.avatarUrl || null} name={authorDisplay} size="sm" />
               <div className="flex-1 min-w-0">
-                <p className="font-extrabold text-gray-900 text-sm truncate">{f.name}</p>
+                <p className="font-extrabold text-gray-900 text-sm truncate">{filterProfanity(f.name)}</p>
                 <div className="flex items-center gap-1 mt-0.5">
                   <p className="text-xs text-gray-400 truncate">{authorDisplay}</p>
                   {profile?.isPro && <ProBadge />}
@@ -173,7 +173,7 @@ function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
     if (description.length > 300) { setError('Description must be under 300 characters.'); return; }
     setLoading(true);
     const result = await shareFormula(user, {
-      name, description, anonymous: anon, tags,
+      name: filterProfanity(name.trim()), description: filterProfanity(description), anonymous: anon, tags,
       carbs, sodium, potassium, magnesium, caffeine, fructoseRatio, thickness, flavor,
     });
     setLoading(false);
@@ -200,10 +200,10 @@ function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
         <div className="px-6 py-5 space-y-5">
           <div>
             <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5 block">Formula Name *</label>
-            <input value={name} onChange={e => setName(e.target.value)} maxLength={60}
+            <input value={name} onChange={e => setName(e.target.value)} maxLength={50}
               placeholder='"Race Day Rocket" or "Long Run Easy"'
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-black transition" />
-            <p className="text-xs text-gray-400 mt-1 text-right">{name.length}/60</p>
+            <p className="text-xs text-gray-400 mt-1 text-right">{name.length}/50</p>
           </div>
 
           <div>
@@ -342,7 +342,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   const handleComment = async () => {
     if (!comment.trim() || !currentUser) return;
     setSubmit(true);
-    await addComment(currentUser, formulaId, comment);
+    await addComment(currentUser, formulaId, filterProfanity(comment));
     setComment('');
     getFormula(formulaId).then(setFormula);
     setSubmit(false);
@@ -361,7 +361,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
           <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
             <Avatar url={authorProfile?.avatarUrl || null} name={author} size="lg" />
             <div className="min-w-0">
-              <h2 className="text-base font-extrabold text-gray-900 truncate">{formula.name}</h2>
+              <h2 className="text-base font-extrabold text-gray-900 truncate">{filterProfanity(formula.name)}</h2>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <p className="text-xs text-gray-400">by <span className="font-semibold text-gray-600">{author}</span></p>
                 {authorProfile?.isPro && <ProBadge />}
@@ -373,7 +373,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
         </div>
 
         <div className="px-6 py-5 space-y-5">
-          {formula.description && <p className="text-sm text-gray-600 leading-relaxed">{formula.description}</p>}
+          {formula.description && <p className="text-sm text-gray-600 leading-relaxed">{filterProfanity(formula.description)}</p>}
 
           {formula.tags?.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
@@ -448,7 +448,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
                       <span className="text-xs font-bold text-gray-900">{c.authorName}</span>
                       <span className="text-xs text-gray-400">{timeAgo(c.postedAt)}</span>
                     </div>
-                    <p className="text-sm text-gray-700 leading-relaxed">{c.text}</p>
+                    <p className="text-sm text-gray-700 leading-relaxed">{filterProfanity(c.text)}</p>
                   </div>
                   {currentUser?.id === c.authorId && (
                     <button onClick={() => deleteComment(currentUser, formulaId, c.id).then(() => getFormula(formulaId).then(setFormula))}
@@ -506,11 +506,11 @@ function FormulaCard({ formula, onOpen, currentUser, onLike, authorProfile }) {
         {/* Gel name — the headline */}
         <div className="flex items-center gap-2 mb-2">
           <FlavorDot flavor={formula.flavor} />
-          <h3 className="font-extrabold text-gray-900 text-base">{formula.name}</h3>
+          <h3 className="font-extrabold text-gray-900 text-base">{filterProfanity(formula.name)}</h3>
         </div>
 
         {formula.description && (
-          <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed pl-4">{formula.description}</p>
+          <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed pl-4">{filterProfanity(formula.description)}</p>
         )}
 
         {/* Formula chips */}
@@ -545,7 +545,40 @@ function FormulaCard({ formula, onOpen, currentUser, onLike, authorProfile }) {
   );
 }
 
-// ── Author profiles cache ─────────────────────────────────────────────────────
+// ── Profanity filter ──────────────────────────────────────────────────────────
+const SWEAR_WORDS = [
+  'fuck', 'fucker', 'fucking', 'fucked', 'fucks',
+  'shit', 'shits', 'shitting', 'shitty',
+  'ass', 'asses', 'asshole', 'assholes',
+  'bitch', 'bitches', 'bitching',
+  'bastard', 'bastards',
+  'cunt', 'cunts',
+  'dick', 'dicks',
+  'cock', 'cocks',
+  'pussy', 'pussies',
+  'piss', 'pissed',
+  'damn', 'damned',
+  'crap', 'craps',
+  'hell',
+  'whore', 'whores',
+  'slut', 'sluts',
+  'nigger', 'niggers', 'nigga',
+  'faggot', 'faggots', 'fag', 'fags',
+  'retard', 'retards', 'retarded',
+  'rape', 'raping', 'raped',
+];
+
+function filterProfanity(text) {
+  if (!text) return text;
+  let result = text;
+  SWEAR_WORDS.forEach(word => {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    result = result.replace(regex, '*'.repeat(word.length));
+  });
+  return result;
+}
+
+
 // Fetches avatar_url + is_pro for a set of user_ids in one query
 function useAuthorProfiles(formulas) {
   const [profiles, setProfiles] = useState({}); // { [userId]: { avatarUrl, isPro } }
@@ -621,9 +654,10 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
   // Reset visible count when search/filter changes
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, filterTag]);
 
-  // Like opens the detail modal instead of re-sorting the feed
+  // Like immediately + open the detail modal so user sees the effect
   const handleLike = async (id) => {
     if (!user) { onSignIn?.(); return; }
+    toggleLike(user, id); // fire-and-forget — detail modal will show updated state
     setDetailId(id);
   };
 
