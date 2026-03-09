@@ -3,6 +3,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { useCart } from './CartContext';
+import { Avatar, ProBadge } from './ProAthleteModal';
+import FormulaCompare from './FormulaCompare';
+import DevPanel from './DevPanel';
 
 function SectionHeader({ title, subtitle }) {
   return (

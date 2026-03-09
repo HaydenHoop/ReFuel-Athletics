@@ -21,30 +21,142 @@ function DevSection({ title, icon, children, defaultOpen = false }) {
   );
 }
 
+// ── Ban Modal ─────────────────────────────────────────────────────────────────
+function BanModal({ user: u, onClose, onBanned }) {
+  const [reason, setReason]   = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError]     = useState('');
+
+  const handleBan = async () => {
+    if (!reason.trim()) { setError('Please provide a reason.'); return; }
+    setSending(true);
+    // 1. Write ban record to profiles
+    const bannedUntil = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    const { error: dbErr } = await supabase.from('profiles').upsert({
+      user_id:      u.id,
+      ban_status:   'banned',
+      ban_reason:   reason.trim(),
+      banned_at:    new Date().toISOString(),
+      ban_expires:  bannedUntil,
+    }, { onConflict: 'user_id' });
+    if (dbErr) { setError(dbErr.message); setSending(false); return; }
+
+    // 2. Send ban email
+    try {
+      await fetch('/api/email/ban', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:     u.email,
+          firstName: u.name,
+          reason:    reason.trim(),
+          banExpires: bannedUntil,
+        }),
+      });
+    } catch (_) { /* email failure shouldn't block ban */ }
+
+    setSending(false);
+    onBanned();
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-xl">🚫</div>
+          <div>
+            <h3 className="font-extrabold text-gray-900">Ban User</h3>
+            <p className="text-xs text-gray-400">{u.name} · {u.email}</p>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+          This user will be banned and receive an email with your reason. They have <strong>2 weeks</strong> to submit an unban request. If not accepted, their account is permanently deleted.
+        </p>
+
+        <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1.5 block">Reason *</label>
+        <textarea
+          value={reason} onChange={e => setReason(e.target.value)}
+          rows={4} maxLength={500}
+          placeholder="Explain why this account is being banned. This will be included in the email sent to the user."
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-400 resize-none transition mb-1"
+        />
+        <p className="text-xs text-gray-400 text-right mb-4">{reason.length}/500</p>
+
+        {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
+
+        <div className="flex gap-2">
+          <button onClick={onClose}
+            className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition">
+            Cancel
+          </button>
+          <button onClick={handleBan} disabled={sending || !reason.trim()}
+            className="flex-1 bg-red-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition disabled:opacity-50">
+            {sending ? 'Banning...' : '🚫 Ban & Notify'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── User Directory ────────────────────────────────────────────────────────────
 function UserProfile({ user: u, onBack }) {
-  const [tab, setTab]       = useState('orders');
-  const [data, setData]     = useState({ orders: [], formulas: [], reviews: [], posts: [] });
+  const [tab, setTab]         = useState('orders');
+  const [data, setData]       = useState({ orders: [], formulas: [], reviews: [], posts: [] });
   const [loading, setLoading] = useState(true);
+  const [banOpen, setBanOpen] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [deletingPost, setDeletingPost] = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      const [ordersRes, formulasRes, reviewsRes, postsRes] = await Promise.all([
-        supabase.from('orders').select('*').eq('user_id', u.id).order('created_at', { ascending: false }),
-        supabase.from('saved_formulas').select('*').eq('user_id', u.id).order('created_at', { ascending: false }),
-        supabase.from('reviews').select('*').eq('reviewer', u.name ?? u.email).order('created_at', { ascending: false }),
-        supabase.from('community_formulas').select('*').eq('user_id', u.id).order('created_at', { ascending: false }),
-      ]);
-      setData({
-        orders:   ordersRes.data   ?? [],
-        formulas: formulasRes.data ?? [],
-        reviews:  reviewsRes.data  ?? [],
-        posts:    postsRes.data    ?? [],
+  const load = async () => {
+    const [ordersRes, formulasRes, reviewsRes, postsRes, profileRes] = await Promise.all([
+      supabase.from('orders').select('*').eq('user_id', u.id).order('created_at', { ascending: false }),
+      supabase.from('saved_formulas').select('*').eq('user_id', u.id).order('created_at', { ascending: false }),
+      supabase.from('reviews').select('*').eq('reviewer', u.name ?? u.email).order('created_at', { ascending: false }),
+      supabase.from('community_formulas').select('*').eq('user_id', u.id).order('created_at', { ascending: false }),
+      supabase.from('profiles').select('*').eq('user_id', u.id).single(),
+    ]);
+    setData({
+      orders:   ordersRes.data   ?? [],
+      formulas: formulasRes.data ?? [],
+      reviews:  reviewsRes.data  ?? [],
+      posts:    postsRes.data    ?? [],
+    });
+    setProfile(profileRes.data ?? null);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, [u.id]);
+
+  const handleDeletePost = async (postId) => {
+    if (!confirm('Permanently delete this community formula? This cannot be undone.')) return;
+    setDeletingPost(postId);
+    await supabase.from('formula_likes').delete().eq('formula_id', postId);
+    await supabase.from('formula_comments').delete().eq('formula_id', postId);
+    await supabase.from('community_formulas').delete().eq('id', postId);
+    setData(d => ({ ...d, posts: d.posts.filter(p => p.id !== postId) }));
+    setDeletingPost(null);
+  };
+
+  const isBanned = profile?.ban_status === 'banned';
+
+  const handleUnban = async () => {
+    if (!confirm('Restore this account? This will lift the ban immediately.')) return;
+    await supabase.from('profiles').upsert(
+      { user_id: u.id, ban_status: null, ban_reason: null, banned_at: null, ban_expires: null },
+      { onConflict: 'user_id' }
+    );
+    try {
+      await fetch('/api/email/unban', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: u.email, firstName: u.name }),
       });
-      setLoading(false);
-    }
+    } catch (_) {}
     load();
-  }, [u.id, u.name, u.email]);
+  };
 
   const TABS = [
     { id: 'orders',   label: `Orders (${data.orders.length})` },
@@ -55,18 +167,49 @@ function UserProfile({ user: u, onBack }) {
 
   return (
     <div>
+      {banOpen && <BanModal user={u} onClose={() => setBanOpen(false)} onBanned={load} />}
+
       <button onClick={onBack} className="text-xs text-red-500 font-bold mb-4 hover:text-red-700 transition flex items-center gap-1">
         ← Back to users
       </button>
 
-      <div className="bg-gray-50 rounded-xl p-4 mb-4 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center text-white font-bold">
+      {/* User card + ban action */}
+      <div className={`rounded-xl p-4 mb-4 flex items-center gap-3 ${isBanned ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
+        <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center text-white font-bold flex-shrink-0">
           {u.name?.[0]?.toUpperCase() ?? '?'}
         </div>
-        <div>
-          <p className="font-bold text-gray-900">{u.name}</p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-bold text-gray-900">{u.name}</p>
+            {isBanned && (
+              <span className="text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded-full">BANNED</span>
+            )}
+          </div>
           <p className="text-xs text-gray-400">{u.email}</p>
-          <p className="text-xs text-gray-300 font-mono mt-0.5">{u.id}</p>
+          <p className="text-xs text-gray-300 font-mono mt-0.5 truncate">{u.id}</p>
+          {isBanned && profile?.ban_reason && (
+            <p className="text-xs text-red-600 mt-1 leading-relaxed">
+              <strong>Reason:</strong> {profile.ban_reason}
+            </p>
+          )}
+          {isBanned && profile?.ban_expires && (
+            <p className="text-xs text-red-400 mt-0.5">
+              Auto-deletes: {new Date(profile.ban_expires).toLocaleDateString()}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col gap-1.5 flex-shrink-0">
+          {isBanned ? (
+            <button onClick={handleUnban}
+              className="text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-lg hover:bg-green-600 transition whitespace-nowrap">
+              ✓ Unban
+            </button>
+          ) : (
+            <button onClick={() => setBanOpen(true)}
+              className="text-xs font-bold bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition whitespace-nowrap">
+              🚫 Ban
+            </button>
+          )}
         </div>
       </div>
 
@@ -140,9 +283,26 @@ function UserProfile({ user: u, onBack }) {
               {data.posts.length === 0 ? <p className="text-sm text-gray-400">No community posts.</p> :
                 data.posts.map(p => (
                   <div key={p.id} className="border border-gray-100 rounded-xl p-3 text-sm">
-                    <p className="font-bold">{p.name || 'Unnamed Formula'}</p>
-                    {p.description && <p className="text-xs text-gray-500 mt-0.5">{p.description}</p>}
-                    <p className="text-xs text-gray-300">{new Date(p.created_at).toLocaleDateString()}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold truncate">{p.name || 'Unnamed Formula'}</p>
+                        {p.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{p.description}</p>}
+                        <p className="text-xs text-gray-300 mt-1">
+                          {new Date(p.created_at).toLocaleDateString()}
+                          {p.anonymous && ' · Anonymous'}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {p.carbs}g carbs · {p.sodium}mg Na
+                          {p.caffeine > 0 ? ` · ${p.caffeine}mg caffeine` : ''}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeletePost(p.id)}
+                        disabled={deletingPost === p.id}
+                        className="flex-shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition disabled:opacity-50">
+                        {deletingPost === p.id ? '...' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
                 ))
               }
@@ -653,6 +813,160 @@ function ProAthleteEditor({ profile, onBack }) {
   );
 }
 
+// ── Ban Request Manager ───────────────────────────────────────────────────────
+function BanRequestManager() {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading]   = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    // Fetch all banned profiles that have submitted an unban request
+    const { data } = await supabase
+      .from('profiles')
+      .select('user_id, ban_status, ban_reason, banned_at, ban_expires, unban_request, unban_request_at, requester_name, requester_email')
+      .eq('ban_status', 'banned')
+      .order('banned_at', { ascending: false });
+    setRequests(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleAccept = async (r) => {
+    // Lift the ban
+    await supabase.from('profiles').upsert({
+      user_id: r.user_id,
+      ban_status: null, ban_reason: null, banned_at: null, ban_expires: null,
+      unban_request: null, unban_request_at: null,
+    }, { onConflict: 'user_id' });
+    // Notify user
+    try {
+      await fetch('/api/email/unban', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: r.requester_email, firstName: r.requester_name }),
+      });
+    } catch (_) {}
+    load();
+  };
+
+  const handleReject = async (r) => {
+    if (!confirm('Rejecting this request will keep the ban in place until auto-deletion. Confirm?')) return;
+    await supabase.from('profiles').upsert({
+      user_id: r.user_id,
+      unban_request: 'rejected',
+    }, { onConflict: 'user_id' });
+    // Notify user of rejection
+    try {
+      await fetch('/api/email/ban-rejected', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: r.requester_email,
+          firstName: r.requester_name,
+          banExpires: r.ban_expires,
+        }),
+      });
+    } catch (_) {}
+    load();
+  };
+
+  if (loading) return <p className="text-sm text-gray-400 py-4 text-center">Loading...</p>;
+
+  const pending  = requests.filter(r => r.unban_request === 'pending');
+  const banned   = requests.filter(r => !r.unban_request || r.unban_request === 'rejected');
+
+  return (
+    <div className="space-y-5">
+      {/* Pending unban requests */}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+          Unban Requests ({pending.length})
+        </p>
+        {pending.length === 0 ? (
+          <p className="text-sm text-gray-400">No pending unban requests.</p>
+        ) : (
+          <div className="space-y-3">
+            {pending.map(r => (
+              <div key={r.user_id} className="border border-amber-200 bg-amber-50/30 rounded-xl p-4">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="font-bold text-sm text-gray-900">{r.requester_name || r.user_id.slice(0,8)+'...'}</p>
+                    <p className="text-xs text-gray-400">{r.requester_email}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Banned: {r.banned_at ? new Date(r.banned_at).toLocaleDateString() : '—'} ·
+                      Auto-deletes: {r.ban_expires ? new Date(r.ban_expires).toLocaleDateString() : '—'}
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full flex-shrink-0">
+                    Pending
+                  </span>
+                </div>
+                {r.ban_reason && (
+                  <div className="bg-white border border-gray-100 rounded-lg px-3 py-2 mb-2">
+                    <p className="text-xs text-gray-400 font-bold mb-0.5">Ban reason</p>
+                    <p className="text-xs text-gray-600">{r.ban_reason}</p>
+                  </div>
+                )}
+                {r.unban_request_at && (
+                  <p className="text-xs text-gray-400 mb-3">
+                    Request submitted: {new Date(r.unban_request_at).toLocaleDateString()}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={() => handleAccept(r)}
+                    className="flex-1 text-xs font-bold bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition">
+                    ✓ Accept — Restore Account
+                  </button>
+                  <button onClick={() => handleReject(r)}
+                    className="flex-1 text-xs font-bold border border-red-300 text-red-600 py-2 rounded-lg hover:bg-red-50 transition">
+                    ✕ Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* All banned accounts */}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+          All Banned Accounts ({requests.length})
+        </p>
+        {requests.length === 0 ? (
+          <p className="text-sm text-gray-400">No banned accounts.</p>
+        ) : (
+          <div className="space-y-2">
+            {requests.map(r => (
+              <div key={r.user_id} className="border border-gray-200 rounded-xl p-3 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-sm font-bold flex-shrink-0">
+                  🚫
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-gray-900 truncate">{r.requester_name || r.user_id.slice(0,8)+'...'}</p>
+                  <p className="text-xs text-gray-400 truncate">{r.requester_email}</p>
+                  <p className="text-xs text-gray-300 mt-0.5">
+                    Auto-deletes: {r.ban_expires ? new Date(r.ban_expires).toLocaleDateString() : '—'}
+                    {r.unban_request === 'rejected' && ' · Request rejected'}
+                  </p>
+                </div>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                  r.unban_request === 'pending'  ? 'bg-amber-100 text-amber-700' :
+                  r.unban_request === 'rejected' ? 'bg-red-100 text-red-600' :
+                  'bg-gray-100 text-gray-500'
+                }`}>
+                  {r.unban_request === 'pending' ? 'Appeal' : r.unban_request === 'rejected' ? 'Rejected' : 'Banned'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function DevPanel() {
   return (
     <div className="space-y-4">
@@ -664,6 +978,7 @@ export default function DevPanel() {
         </div>
       </div>
       <DevSection title="User Directory" icon="👥"><UserDirectory /></DevSection>
+      <DevSection title="Ban Requests" icon="🚫"><BanRequestManager /></DevSection>
       <DevSection title="Pro Athlete Requests" icon="⚡"><ProRequestManager /></DevSection>
       <DevSection title="Review & Testimonial Management" icon="⭐"><ReviewManager /></DevSection>
       <DevSection title="Test Emails" icon="📧"><TestEmailSender /></DevSection>
