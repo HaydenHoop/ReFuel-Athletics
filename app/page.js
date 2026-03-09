@@ -77,7 +77,13 @@ function PageContent() {
 
   const resetQuiz = () => { setQuizFormula(null); setQuizDone(false); setQuizMode('landing'); };
 
-  const goToQuiz = () => { setQuizMode('landing'); setActiveTab('quiz'); };
+  const goToQuiz = () => {
+    // If they already have a formula, skip the landing screen and go straight to it.
+    // quizMode already holds how it was built ('quiz', 'manual', etc) — only reset
+    // to landing if there's no formula yet.
+    if (!quizFormula) setQuizMode('landing');
+    setActiveTab('quiz');
+  };
 
   const goToRaceDayQuiz = () => {
     setQuizMode('race-day-quiz');
@@ -100,7 +106,8 @@ function PageContent() {
   };
 
   const handleTabChange = (tab) => {
-    if (tab !== 'quiz') setQuizMode('landing');
+    // Only reset to landing when leaving quiz entirely and there's no formula saved
+    if (tab !== 'quiz' && !quizFormula) setQuizMode('landing');
     setActiveTab(tab);
   };
 
