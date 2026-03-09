@@ -366,7 +366,16 @@ function PageContent() {
             {/* Account */}
             {activeTab === 'account' && (
               user
-                ? <AccountPage onLoadFormula={handleLoadFormula} />
+                ? <AccountPage
+                    onLoadFormula={handleLoadFormula}
+                    onViewCommunityFormula={(formulaId) => {
+                      setActiveTab('community');
+                      // Small delay so CommunityPage mounts before we try to open detail
+                      setTimeout(() => {
+                        window.__openCommunityFormula?.(formulaId);
+                      }, 100);
+                    }}
+                  />
                 : (
                   <div className="text-center py-20">
                     <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Sign in to your account</h2>

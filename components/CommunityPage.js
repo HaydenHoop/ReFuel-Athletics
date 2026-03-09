@@ -575,6 +575,8 @@ function useAuthorProfiles(formulas) {
   return profiles;
 }
 
+const PAGE_SIZE = 20;
+
 // ── Main CommunityPage ────────────────────────────────────────────────────────
 export default function CommunityPage({ onLoadFormula, onSignIn }) {
   const { user }                        = useAuth();
@@ -586,6 +588,8 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
   const [search, setSearch]             = useState('');
   const [filterTag, setFilterTag]       = useState('All');
   const [feedLoading, setFeedLoading]   = useState(true);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef                     = useRef(null);
 
   const authorProfiles = useAuthorProfiles(formulas);
 
@@ -595,10 +599,32 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
   };
   useEffect(() => { refresh(); }, []);
 
+  // Allow external callers (e.g. AccountPage "View →") to open a detail
+  useEffect(() => {
+    window.__openCommunityFormula = (id) => setDetailId(id);
+    return () => { delete window.__openCommunityFormula; };
+  }, []);
+
+  // ── Infinite scroll via IntersectionObserver ──────────────────────────────
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount(prev => prev + PAGE_SIZE);
+      }
+    }, { threshold: 0.1 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [feedLoading]); // re-attach after loading completes
+
+  // Reset visible count when search/filter changes
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, filterTag]);
+
+  // Like opens the detail modal instead of re-sorting the feed
   const handleLike = async (id) => {
     if (!user) { onSignIn?.(); return; }
-    await toggleLike(user, id);
-    refresh();
+    setDetailId(id);
   };
 
   const handleShared = (id) => {
@@ -615,6 +641,9 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
       f.authorName?.toLowerCase().includes(search.toLowerCase());
     return matchTag && matchSearch;
   });
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   return (
     <div className="w-full max-w-5xl mx-auto">
@@ -708,12 +737,25 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
               )}
             </div>
           ) : (
-            <div className="space-y-4">
-              {filtered.map(f => (
-                <FormulaCard key={f.id} formula={f} onOpen={setDetailId} currentUser={user} onLike={handleLike}
-                  authorProfile={!f.anonymous ? authorProfiles[f.authorId] : null} />
-              ))}
-            </div>
+            <>
+              <div className="space-y-4">
+                {visible.map(f => (
+                  <FormulaCard key={f.id} formula={f} onOpen={setDetailId} currentUser={user} onLike={handleLike}
+                    authorProfile={!f.anonymous ? authorProfiles[f.authorId] : null} />
+                ))}
+              </div>
+              {/* Infinite scroll sentinel */}
+              <div ref={sentinelRef} className="py-4 flex justify-center">
+                {hasMore ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                    Loading more...
+                  </div>
+                ) : filtered.length > PAGE_SIZE ? (
+                  <p className="text-xs text-gray-400">You've seen all {filtered.length} formulas</p>
+                ) : null}
+              </div>
+            </>
           )}
         </div>
 
