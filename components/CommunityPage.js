@@ -17,6 +17,39 @@ const FLAVORS = [
 const THICKNESS_LABELS = ['', 'Liquid', 'Thin', 'Standard', 'Thick', 'Extra Thick'];
 const SPORT_TAGS = ['Running', 'Cycling', 'Triathlon', 'Trail', 'Ultra', 'MTB', 'Swimming', 'General'];
 
+// ── Profanity filter ──────────────────────────────────────────────────────────
+const SWEAR_WORDS = [
+  'fuck', 'fucker', 'fucking', 'fucked', 'fucks',
+  'shit', 'shits', 'shitting', 'shitty',
+  'ass', 'asses', 'asshole', 'assholes',
+  'bitch', 'bitches', 'bitching',
+  'bastard', 'bastards',
+  'cunt', 'cunts',
+  'dick', 'dicks',
+  'cock', 'cocks',
+  'pussy', 'pussies',
+  'piss', 'pissed',
+  'damn', 'damned',
+  'crap', 'craps',
+  'hell',
+  'whore', 'whores',
+  'slut', 'sluts',
+  'nigger', 'niggers', 'nigga',
+  'faggot', 'faggots', 'fag', 'fags',
+  'retard', 'retards', 'retarded',
+  'rape', 'raping', 'raped',
+];
+
+function filterProfanity(text) {
+  if (!text) return text;
+  let result = text;
+  SWEAR_WORDS.forEach(word => {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    result = result.replace(regex, '*'.repeat(word.length));
+  });
+  return result;
+}
+
 
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -139,7 +172,7 @@ function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
   const { shareFormula }   = useCommunity();
   const [name, setName]         = useState('');
   const [description, setDesc]  = useState('');
-  const [anonymous, setAnon]    = useState(false);
+  const [anon, setAnon]    = useState(false);
   const [tags, setTags]         = useState([]);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
@@ -544,40 +577,6 @@ function FormulaCard({ formula, onOpen, currentUser, onLike, authorProfile }) {
     </div>
   );
 }
-
-// ── Profanity filter ──────────────────────────────────────────────────────────
-const SWEAR_WORDS = [
-  'fuck', 'fucker', 'fucking', 'fucked', 'fucks',
-  'shit', 'shits', 'shitting', 'shitty',
-  'ass', 'asses', 'asshole', 'assholes',
-  'bitch', 'bitches', 'bitching',
-  'bastard', 'bastards',
-  'cunt', 'cunts',
-  'dick', 'dicks',
-  'cock', 'cocks',
-  'pussy', 'pussies',
-  'piss', 'pissed',
-  'damn', 'damned',
-  'crap', 'craps',
-  'hell',
-  'whore', 'whores',
-  'slut', 'sluts',
-  'nigger', 'niggers', 'nigga',
-  'faggot', 'faggots', 'fag', 'fags',
-  'retard', 'retards', 'retarded',
-  'rape', 'raping', 'raped',
-];
-
-function filterProfanity(text) {
-  if (!text) return text;
-  let result = text;
-  SWEAR_WORDS.forEach(word => {
-    const regex = new RegExp(`\\b${word}\\b`, 'gi');
-    result = result.replace(regex, '*'.repeat(word.length));
-  });
-  return result;
-}
-
 
 // Fetches avatar_url + is_pro for a set of user_ids in one query
 function useAuthorProfiles(formulas) {
