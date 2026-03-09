@@ -18,7 +18,7 @@ function Avatar({ url, name, size = 'lg' }) {
 function ProBadge() {
   return (
     <span className="inline-flex items-center gap-0.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-black px-2 py-0.5 rounded-full tracking-wide shadow-sm">
-      ⚡ PRO
+       PRO
     </span>
   );
 }
