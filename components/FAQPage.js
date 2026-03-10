@@ -79,55 +79,37 @@ function BambooBackground() {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
 
-      {/* Deep forest base */}
+      {/* Clean white base */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: `
-          radial-gradient(ellipse at 30% 20%, rgba(22,58,26,0.6) 0%, transparent 55%),
-          radial-gradient(ellipse at 70% 60%, rgba(14,42,18,0.5) 0%, transparent 50%),
-          radial-gradient(ellipse at 50% 90%, rgba(8,28,10,0.8) 0%, transparent 60%),
-          linear-gradient(170deg, #071a09 0%, #0c2a10 30%, #0f3318 60%, #071408 100%)
-        `,
+        background: 'linear-gradient(160deg, #f8f9fa 0%, #f0f2f5 40%, #e8ecf0 100%)',
       }} />
 
-      {/* Subtle noise/grain texture overlay */}
+      {/* Subtle ambient blobs */}
       <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E")`,
-        opacity: 0.4,
-      }} />
-
-      {/* Ambient glow pools */}
-      <div style={{
-        position: 'absolute', top: '5%', left: '15%',
+        position: 'absolute', top: '5%', left: '10%',
         width: '600px', height: '600px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(30,90,35,0.14) 0%, transparent 65%)',
-        filter: 'blur(50px)',
-      }} />
-      <div style={{
-        position: 'absolute', top: '40%', right: '10%',
-        width: '450px', height: '450px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(18,65,22,0.12) 0%, transparent 65%)',
+        background: 'radial-gradient(circle, rgba(200,215,255,0.35) 0%, transparent 65%)',
         filter: 'blur(60px)',
       }} />
       <div style={{
-        position: 'absolute', bottom: '15%', left: '35%',
-        width: '700px', height: '350px', borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(12,48,16,0.10) 0%, transparent 65%)',
+        position: 'absolute', top: '35%', right: '8%',
+        width: '500px', height: '500px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(210,225,255,0.28) 0%, transparent 65%)',
         filter: 'blur(70px)',
       }} />
-
-
-      {/* Radial vignette */}
       <div style={{
-        position: 'absolute', inset: 0,
-        background: 'radial-gradient(ellipse at 50% 40%, transparent 25%, rgba(0,0,0,0.5) 85%, rgba(0,0,0,0.7) 100%)',
+        position: 'absolute', bottom: '10%', left: '30%',
+        width: '700px', height: '400px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(195,210,240,0.22) 0%, transparent 65%)',
+        filter: 'blur(80px)',
       }} />
 
-      {/* Top content fade */}
+
+      {/* Soft edge vignette */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '160px',
-        background: 'linear-gradient(to bottom, rgba(5,16,7,0.65) 0%, transparent 100%)',
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(180,190,210,0.2) 100%)',
       }} />
     </div>
   );
@@ -139,13 +121,13 @@ function FAQItem({ q, a }) {
   return (
     <div style={{
       borderRadius: '14px', overflow: 'hidden',
-      border: open ? '1px solid rgba(90,185,100,0.22)' : '1px solid rgba(255,255,255,0.07)',
-      background: open ? 'rgba(12,32,15,0.68)' : 'rgba(8,20,10,0.48)',
+      border: open ? '1px solid rgba(0,0,0,0.10)' : '1px solid rgba(0,0,0,0.07)',
+      background: open ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.55)',
       backdropFilter: 'blur(18px)',
       WebkitBackdropFilter: 'blur(18px)',
       boxShadow: open
-        ? '0 6px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(90,185,100,0.12)'
-        : '0 2px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03)',
+        ? '0 6px 32px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.9)'
+        : '0 2px 10px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
       transition: 'all 0.22s ease',
     }}>
       <button
@@ -159,7 +141,7 @@ function FAQItem({ q, a }) {
       >
         <span style={{
           fontSize: '13.5px', fontWeight: 600, lineHeight: 1.55,
-          color: open ? '#b8edbe' : 'rgba(200,235,205,0.80)',
+          color: open ? '#111827' : '#374151',
           transition: 'color 0.2s',
         }}>
           {q}
@@ -168,9 +150,9 @@ function FAQItem({ q, a }) {
           flexShrink: 0, width: '22px', height: '22px', borderRadius: '50%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '13px', fontWeight: 700,
-          background: open ? 'rgba(60,160,70,0.28)' : 'rgba(255,255,255,0.07)',
-          color: open ? '#80d885' : 'rgba(255,255,255,0.35)',
-          border: open ? '1px solid rgba(80,180,90,0.30)' : '1px solid rgba(255,255,255,0.09)',
+          background: open ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.05)',
+          color: open ? '#111827' : '#9ca3af',
+          border: open ? '1px solid rgba(0,0,0,0.12)' : '1px solid rgba(0,0,0,0.08)',
           transform: open ? 'rotate(45deg)' : 'rotate(0deg)',
           transition: 'all 0.22s ease',
         }}>
@@ -181,11 +163,11 @@ function FAQItem({ q, a }) {
         <div style={{ padding: '0 22px 18px' }}>
           <div style={{
             width: '100%', height: '1px',
-            background: 'linear-gradient(to right, rgba(80,180,90,0.25), transparent)',
+            background: 'linear-gradient(to right, rgba(0,0,0,0.08), transparent)',
             marginBottom: '14px',
           }} />
           <p style={{
-            fontSize: '13px', color: 'rgba(165,215,172,0.78)',
+            fontSize: '13px', color: '#6b7280',
             lineHeight: 1.8, margin: 0,
           }}>
             {a}
@@ -214,30 +196,30 @@ export default function FAQPage({ onGoToQuiz }) {
         <div style={{ marginBottom: '44px', textAlign: 'center' }}>
           <p style={{
             fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.14em',
-            textTransform: 'uppercase', color: 'rgba(110,195,120,0.65)',
+            textTransform: 'uppercase', color: 'rgba(100,116,139,0.8)',
             marginBottom: '10px', margin: '0 0 10px',
           }}>
             Got Questions?
           </p>
           <h1 style={{
             fontSize: 'clamp(40px, 7vw, 60px)', fontWeight: 900,
-            color: '#dff0e2', letterSpacing: '-0.025em',
+            color: '#111827', letterSpacing: '-0.025em',
             margin: '0 0 16px',
-            textShadow: '0 2px 30px rgba(0,0,0,0.6)',
+            textShadow: 'none',
           }}>
             FAQ
           </h1>
           <p style={{
-            fontSize: '14px', color: 'rgba(150,205,158,0.72)',
+            fontSize: '14px', color: '#6b7280',
             lineHeight: 1.75, maxWidth: '440px', margin: '0 auto',
           }}>
             Everything you need to know about our gel formulas and reusable packet. Can't find what you're looking for?{' '}
             <a
               href="mailto:haydenh.refuel@gmail.com"
               style={{
-                color: '#7bd880', fontWeight: 600,
+                color: '#111827', fontWeight: 600,
                 textDecoration: 'underline',
-                textDecorationColor: 'rgba(123,216,128,0.35)',
+                textDecorationColor: 'rgba(0,0,0,0.25)',
               }}
             >
               Email us directly.
@@ -248,12 +230,12 @@ export default function FAQPage({ onGoToQuiz }) {
         {/* Glass tab switcher */}
         <div style={{
           display: 'flex', gap: '5px', marginBottom: '24px',
-          background: 'rgba(4,12,5,0.60)',
+          background: 'rgba(255,255,255,0.55)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255,255,255,0.07)',
+          border: '1px solid rgba(0,0,0,0.07)',
           borderRadius: '16px', padding: '4px',
-          boxShadow: '0 4px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
+          boxShadow: '0 4px 28px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
         }}>
           {FAQS.map(section => {
             const active = activeCategory === section.category;
@@ -265,13 +247,13 @@ export default function FAQPage({ onGoToQuiz }) {
                   flex: 1, display: 'flex', alignItems: 'center',
                   justifyContent: 'center', gap: '8px',
                   padding: '10px 14px', borderRadius: '12px',
-                  border: active ? '1px solid rgba(80,175,92,0.22)' : '1px solid transparent',
-                  background: active ? 'rgba(22,68,28,0.75)' : 'transparent',
-                  color: active ? '#a8e4ae' : 'rgba(140,195,148,0.50)',
+                  border: active ? '1px solid rgba(0,0,0,0.09)' : '1px solid transparent',
+                  background: active ? 'rgba(255,255,255,0.90)' : 'transparent',
+                  color: active ? '#111827' : '#9ca3af',
                   fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   boxShadow: active
-                    ? '0 2px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(100,200,110,0.12)'
+                    ? '0 2px 14px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,1)'
                     : 'none',
                 }}
               >
@@ -296,27 +278,27 @@ export default function FAQPage({ onGoToQuiz }) {
         <div style={{
           marginTop: '52px', borderRadius: '22px', padding: '38px 32px',
           textAlign: 'center',
-          background: 'rgba(6,18,8,0.72)',
+          background: 'rgba(255,255,255,0.65)',
           backdropFilter: 'blur(22px)',
           WebkitBackdropFilter: 'blur(22px)',
-          border: '1px solid rgba(80,175,92,0.18)',
-          boxShadow: '0 8px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(90,185,100,0.08)',
+          border: '1px solid rgba(0,0,0,0.08)',
+          boxShadow: '0 8px 48px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.95)',
         }}>
           <p style={{
             fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.14em',
-            textTransform: 'uppercase', color: 'rgba(110,195,120,0.55)',
+            textTransform: 'uppercase', color: 'rgba(100,116,139,0.8)',
             margin: '0 0 10px',
           }}>
             Still unsure?
           </p>
           <h3 style={{
-            fontSize: '21px', fontWeight: 800, color: '#dff0e2',
+            fontSize: '21px', fontWeight: 800, color: '#111827',
             margin: '0 0 10px', letterSpacing: '-0.01em',
           }}>
             Let the quiz decide for you.
           </h3>
           <p style={{
-            fontSize: '13px', color: 'rgba(150,205,158,0.65)',
+            fontSize: '13px', color: '#6b7280',
             margin: '0 0 26px', lineHeight: 1.65,
           }}>
             Answer 7 questions and we'll build a formula matched to your sport, sweat rate, and gut.
@@ -324,23 +306,23 @@ export default function FAQPage({ onGoToQuiz }) {
           <button
             onClick={onGoToQuiz}
             style={{
-              background: 'linear-gradient(135deg, #285c2c 0%, #1b4a1f 100%)',
-              color: '#c8eecb', padding: '13px 30px',
+              background: '#111827',
+              color: '#ffffff', padding: '13px 30px',
               borderRadius: '11px', fontWeight: 700, fontSize: '13.5px',
-              border: '1px solid rgba(80,175,92,0.28)',
+              border: '1px solid rgba(0,0,0,0.15)',
               cursor: 'pointer',
-              boxShadow: '0 4px 22px rgba(0,0,0,0.45), inset 0 1px 0 rgba(140,220,148,0.18)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
               transition: 'all 0.2s ease',
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #316834 0%, #225a26 100%)';
+              e.currentTarget.style.background = '#1f2937';
               e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 6px 28px rgba(0,0,0,0.5), inset 0 1px 0 rgba(140,220,148,0.2)';
+              e.currentTarget.style.boxShadow = '0 6px 22px rgba(0,0,0,0.2)';
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.background = 'linear-gradient(135deg, #285c2c 0%, #1b4a1f 100%)';
+              e.currentTarget.style.background = '#111827';
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 22px rgba(0,0,0,0.45), inset 0 1px 0 rgba(140,220,148,0.18)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
             }}
           >
             Take the Diagnostic →
