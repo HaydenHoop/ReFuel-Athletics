@@ -131,6 +131,7 @@ function PageContent() {
   // 'landing' | 'quiz' | 'manual' | 'race-day-quiz' | 'race-day-manual'
   const [quizMode, setQuizMode]         = useState('landing');
   const builderRef                      = useRef(null);
+  const dealsRef                        = useRef(null); // ← passed to ProductsPage, scrolled to from CartDrawer
 
   const scrollToBuilder = () => setTimeout(() =>
     builderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
@@ -144,9 +145,6 @@ function PageContent() {
   const resetQuiz = () => { setQuizFormula(null); setQuizDone(false); setQuizMode('landing'); };
 
   const goToQuiz = () => {
-    // If they already have a formula, skip the landing screen and go straight to it.
-    // quizMode already holds how it was built ('quiz', 'manual', etc) — only reset
-    // to landing if there's no formula yet.
     if (!quizFormula) setQuizMode('landing');
     setActiveTab('quiz');
   };
@@ -172,10 +170,17 @@ function PageContent() {
   };
 
   const handleTabChange = (tab) => {
-    // Only reset to landing when leaving quiz entirely and there's no formula saved
     if (tab !== 'quiz' && !quizFormula) setQuizMode('landing');
     setActiveTab(tab);
     window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  // ← Navigate to products tab then scroll to the Deals & Bundles section
+  const handleViewDeals = () => {
+    setActiveTab('products');
+    setTimeout(() => {
+      dealsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
   };
 
   const RACE_DAY_DEFAULT = {
@@ -192,7 +197,8 @@ function PageContent() {
         onAccountClick={handleAccountClick}
       />
 
-      <CartDrawer onCheckout={() => setCheckoutOpen(true)} />
+      {/* ← onViewDeals wired so CartDrawer "Check Deals" button works */}
+      <CartDrawer onCheckout={() => setCheckoutOpen(true)} onViewDeals={handleViewDeals} />
       <CheckoutModal isOpen={checkoutOpen} onClose={() => setCheckoutOpen(false)} onViewAccount={() => setActiveTab('account')} />
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode={authMode} />
 
@@ -207,13 +213,14 @@ function PageContent() {
         {activeTab !== 'home' && (
           <div className="flex flex-col items-center px-4 py-12 pt-[100px]">
 
-            {/* Shop */}
+            {/* Shop — dealsRef passed so CartDrawer can scroll to deals */}
             {activeTab === 'products' && (
               <ProductsPage
                 onGoToQuiz={goToQuiz}
                 onGoToRaceDayQuiz={goToRaceDayQuiz}
                 quizFormula={quizFormula}
                 onViewProduct={(id) => { setActiveProduct(id); setActiveTab('product-detail'); }}
+                dealsRef={dealsRef}
               />
             )}
 

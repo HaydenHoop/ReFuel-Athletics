@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from './CartContext';
+import { useAuth } from './AuthContext';
 
 // ── Inline Stars (display only, no modal) ─────────────────────────────────────
 function Stars({ rating, empty = false }) {
@@ -402,129 +403,237 @@ function BundleModal({ onClose, onAddBundle }) {
 
 // ── Subscription Section ──────────────────────────────────────────────────────
 const GEL_TYPES = [
-  { id: 'custom', name: 'Custom Gel Powder', price: 1.88, unit: 'per pouch' },
-  { id: 'race-day', name: 'Race Day Gel', price: 2.49, unit: 'per pouch' },
+  { id: 'custom',   name: 'Custom Gel Powder', price: 1.88 },
+  { id: 'race-day', name: 'Race Day Gel',       price: 2.49 },
 ];
 
 const FLAVORS = ['Neutral / Unflavored', 'Berry Blast', 'Citrus Surge', 'Tropical', 'Watermelon'];
 
 const POUCH_OPTIONS = [10, 20, 30, 40, 50];
 
-// Discount: monthly = 10%, yearly = 20%
 const MONTHLY_DISCOUNT = 0.10;
 const YEARLY_DISCOUNT  = 0.20;
 
-function ShipmentConfigurator({ shipment, index, onChange }) {
+function SavedFormulaLoader({ linkedFormula, onLink }) {
+  const { user, getSavedFormulas } = useAuth();
+  const [open, setOpen]       = useState(false);
+  const [formulas, setFormulas] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleOpen = async () => {
+    setOpen(true);
+    if (!user) return;
+    setLoading(true);
+    const data = await getSavedFormulas();
+    setFormulas(data);
+    setLoading(false);
+  };
+
+  if (linkedFormula) {
+    return (
+      <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-3 py-2.5">
+        <div>
+          <p className="text-xs font-bold text-green-800">Formula linked</p>
+          <p className="text-xs text-green-600">{linkedFormula.name}</p>
+        </div>
+        <button onClick={() => onLink(null)} className="text-xs text-green-600 hover:text-green-800 font-semibold ml-3 flex-shrink-0">
+          Remove
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <button
+        onClick={handleOpen}
+        className="w-full py-2 border border-dashed border-gray-300 rounded-xl text-xs font-bold text-gray-400 hover:border-gray-500 hover:text-gray-600 transition uppercase tracking-widest">
+        Load saved formula
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm"
+          onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}
+        >
+          <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+              <h3 className="font-extrabold text-gray-900">Saved Formulas</h3>
+              <button onClick={() => setOpen(false)}
+                className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition text-sm">
+                ✕
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4 space-y-2">
+              {!user ? (
+                <p className="text-sm text-gray-500 text-center py-6">Sign in to load your saved formulas.</p>
+              ) : loading ? (
+                <p className="text-sm text-gray-400 text-center py-6">Loading...</p>
+              ) : formulas.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-6">No saved formulas yet. Build one in the quiz and save it from your account.</p>
+              ) : formulas.map(f => (
+                <button key={f.id} onClick={() => { onLink(f); setOpen(false); }}
+                  className="w-full text-left p-3.5 border border-gray-200 rounded-xl hover:border-black hover:bg-gray-50 transition">
+                  <p className="font-bold text-sm text-gray-900">{f.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {f.carbs}g carbs · {f.caffeine}mg caffeine · {f.sodium}mg sodium · {f.flavor}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function GelRow({ gelId, row, active, onToggle, onUpdate }) {
+  const gel = GEL_TYPES.find(g => g.id === gelId);
+  return (
+    <div className={`rounded-xl border transition ${active ? 'border-gray-300 bg-white' : 'border-gray-100 bg-gray-50 opacity-60'}`}>
+      <div className="flex items-center justify-between px-4 py-3">
+        <div>
+          <p className="text-sm font-bold text-gray-900">{gel.name}</p>
+          <p className="text-xs text-gray-400">${gel.price}/pouch</p>
+        </div>
+        <button
+          onClick={() => onToggle(gelId)}
+          className={`relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0
+            ${active ? 'bg-black' : 'bg-gray-200'}`}>
+          <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200
+            ${active ? 'translate-x-5' : 'translate-x-0'}`} />
+        </button>
+      </div>
+
+      {active && (
+        <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Pouches</p>
+            <div className="flex gap-1.5">
+              {POUCH_OPTIONS.map(n => (
+                <button key={n} onClick={() => onUpdate(gelId, 'qty', n)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition
+                    ${row.qty === n ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-500 hover:border-gray-400'}`}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Flavor</p>
+            <select
+              value={row.flavor}
+              onChange={e => onUpdate(gelId, 'flavor', e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 outline-none focus:border-black bg-white transition">
+              {FLAVORS.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </div>
+
+          {gelId === 'custom' && (
+            <SavedFormulaLoader
+              linkedFormula={row.linkedFormula}
+              onLink={(formula) => onUpdate(gelId, 'linkedFormula', formula)}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ShipmentConfigurator({ shipment, index, onUpdate, onToggle }) {
+  const activeGels = GEL_TYPES.filter(g => shipment.gels[g.id]?.active);
+  const shipTotal  = activeGels.reduce((sum, g) => sum + g.price * (shipment.gels[g.id]?.qty ?? 0), 0);
+
   return (
     <div className="border border-gray-200 rounded-2xl overflow-hidden">
-      <div className="bg-gray-50 px-5 py-3 border-b border-gray-100">
+      <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center justify-between">
         <p className="text-xs font-black uppercase tracking-widest text-gray-500">
-          Shipment {index + 1}{index === 0 ? ' — First of month' : ' — Mid month'}
+          Shipment {index + 1}{index === 0 ? ' — Start of month' : ' — Mid month'}
         </p>
+        <p className="text-xs font-semibold text-gray-400">${shipTotal.toFixed(2)} retail</p>
       </div>
-      <div className="px-5 py-4 space-y-4">
-
-        {/* Gel type */}
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Gel Type</p>
-          <div className="flex gap-2">
-            {GEL_TYPES.map(g => (
-              <button key={g.id} onClick={() => onChange('gelType', g.id)}
-                className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-bold border transition text-left
-                  ${shipment.gelType === g.id ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-600 hover:border-gray-400'}`}>
-                <span className="block text-xs font-black leading-tight">{g.name}</span>
-                <span className={`text-xs font-normal ${shipment.gelType === g.id ? 'text-white/60' : 'text-gray-400'}`}>${g.price}/pouch</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Quantity */}
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Pouches per shipment</p>
-          <div className="flex gap-2">
-            {POUCH_OPTIONS.map(n => (
-              <button key={n} onClick={() => onChange('qty', n)}
-                className={`flex-1 py-2 rounded-xl text-sm font-bold border transition
-                  ${shipment.qty === n ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-500 hover:border-gray-400'}`}>
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Flavor */}
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Flavor</p>
-          <select
-            value={shipment.flavor}
-            onChange={e => onChange('flavor', e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-black bg-white transition"
-          >
-            {FLAVORS.map(f => <option key={f} value={f}>{f}</option>)}
-          </select>
-        </div>
-
+      <div className="px-5 py-4 space-y-3">
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Select gels — choose one or both</p>
+        {GEL_TYPES.map(gel => (
+          <GelRow
+            key={gel.id}
+            gelId={gel.id}
+            row={shipment.gels[gel.id]}
+            active={shipment.gels[gel.id]?.active ?? false}
+            onToggle={onToggle}
+            onUpdate={onUpdate}
+          />
+        ))}
+        {activeGels.length === 0 && (
+          <p className="text-xs text-red-400 font-semibold text-center py-2">Enable at least one gel type</p>
+        )}
       </div>
     </div>
   );
 }
 
-const DEFAULT_SHIPMENT = { gelType: 'custom', qty: 20, flavor: 'Neutral / Unflavored' };
+const defaultShipmentState = () => ({
+  gels: {
+    'custom':   { active: true,  qty: 20, flavor: 'Neutral / Unflavored', linkedFormula: null },
+    'race-day': { active: false, qty: 10, flavor: 'Neutral / Unflavored', linkedFormula: null },
+  },
+});
 
 function SubscriptionSection({ onSubscribe }) {
-  const [billing, setBilling]         = useState('monthly'); // 'monthly' | 'yearly'
-  const [shipments, setShipments]     = useState(1);          // 1 or 2 per month
-  const [ship1, setShip1]             = useState({ ...DEFAULT_SHIPMENT });
-  const [ship2, setShip2]             = useState({ ...DEFAULT_SHIPMENT });
-  const [added, setAdded]             = useState(false);
+  const [billing, setBilling]     = useState('monthly');
+  const [shipments, setShipments] = useState(1);
+  const [ship1, setShip1]         = useState(defaultShipmentState());
+  const [ship2, setShip2]         = useState(defaultShipmentState());
+  const [added, setAdded]         = useState(false);
 
   const discount    = billing === 'yearly' ? YEARLY_DISCOUNT : MONTHLY_DISCOUNT;
   const discountPct = billing === 'yearly' ? '20%' : '10%';
 
-  const calcShipment = (s) => {
-    const gel = GEL_TYPES.find(g => g.id === s.gelType);
-    return gel.price * s.qty;
-  };
+  const calcShipRetail = (ship) =>
+    GEL_TYPES.filter(g => ship.gels[g.id]?.active)
+      .reduce((sum, g) => sum + g.price * (ship.gels[g.id]?.qty ?? 0), 0);
 
-  const monthlyRetail = calcShipment(ship1) + (shipments === 2 ? calcShipment(ship2) : 0);
+  const monthlyRetail = calcShipRetail(ship1) + (shipments === 2 ? calcShipRetail(ship2) : 0);
   const monthlyPrice  = +(monthlyRetail * (1 - discount)).toFixed(2);
   const yearlyTotal   = +(monthlyPrice * 12).toFixed(2);
 
-  const updateShip = (which, field, value) => {
-    if (which === 0) setShip1(s => ({ ...s, [field]: value }));
-    else             setShip2(s => ({ ...s, [field]: value }));
+  const updateShip = (which, gelId, field, value) => {
+    const setter = which === 0 ? setShip1 : setShip2;
+    setter(s => ({ ...s, gels: { ...s.gels, [gelId]: { ...s.gels[gelId], [field]: value } } }));
+  };
+
+  const toggleGel = (which, gelId) => {
+    const setter = which === 0 ? setShip1 : setShip2;
+    setter(s => ({
+      ...s,
+      gels: { ...s.gels, [gelId]: { ...s.gels[gelId], active: !s.gels[gelId].active } },
+    }));
   };
 
   const handleSubscribe = () => {
-    const config = {
-      billing,
-      shipments,
-      ship1,
-      ship2: shipments === 2 ? ship2 : null,
-      monthlyPrice,
-      yearlyTotal,
-      discount,
-    };
-    onSubscribe?.(config);
+    const s1valid = GEL_TYPES.some(g => ship1.gels[g.id]?.active);
+    const s2valid = shipments < 2 || GEL_TYPES.some(g => ship2.gels[g.id]?.active);
+    if (!s1valid || !s2valid) return;
+    onSubscribe?.({ billing, shipments, ship1, ship2: shipments === 2 ? ship2 : null, monthlyPrice, yearlyTotal, discount });
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
   };
 
   return (
     <div className="mt-14">
-      {/* Header */}
       <div className="mb-8">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Never run out</p>
         <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight mb-2">Subscribe &amp; Save</h2>
         <p className="text-gray-500 text-sm max-w-xl">
-          Set up auto-ship for your formula. Choose monthly or yearly billing, one or two shipments per month, and configure each shipment independently. Cancel or pause anytime from your account.
+          Set up auto-ship for your formula. Choose monthly or yearly billing, one or two shipments per month, and mix gel types per shipment. Link a saved custom formula to any shipment. Cancel or pause anytime.
         </p>
       </div>
 
       <div className="border border-gray-200 rounded-2xl overflow-hidden">
 
-        {/* Billing toggle */}
         <div className="p-5 border-b border-gray-100">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Billing cycle</p>
           <div className="flex gap-3">
@@ -549,7 +658,6 @@ function SubscriptionSection({ onSubscribe }) {
           </div>
         </div>
 
-        {/* Shipments per month */}
         <div className="p-5 border-b border-gray-100">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Shipments per month</p>
           <div className="flex gap-3">
@@ -567,16 +675,22 @@ function SubscriptionSection({ onSubscribe }) {
           </div>
         </div>
 
-        {/* Shipment configurators */}
         <div className="p-5 space-y-4 border-b border-gray-100">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Configure your shipment{shipments === 2 ? 's' : ''}</p>
-          <ShipmentConfigurator shipment={ship1} index={0} onChange={(f, v) => updateShip(0, f, v)} />
+          <ShipmentConfigurator
+            shipment={ship1} index={0}
+            onUpdate={(gelId, field, val) => updateShip(0, gelId, field, val)}
+            onToggle={(gelId) => toggleGel(0, gelId)}
+          />
           {shipments === 2 && (
-            <ShipmentConfigurator shipment={ship2} index={1} onChange={(f, v) => updateShip(1, f, v)} />
+            <ShipmentConfigurator
+              shipment={ship2} index={1}
+              onUpdate={(gelId, field, val) => updateShip(1, gelId, field, val)}
+              onToggle={(gelId) => toggleGel(1, gelId)}
+            />
           )}
         </div>
 
-        {/* Pricing summary + CTA */}
         <div className="p-5 bg-gray-50">
           <div className="flex items-end justify-between mb-4">
             <div>
@@ -603,7 +717,9 @@ function SubscriptionSection({ onSubscribe }) {
             onClick={handleSubscribe}
             className={`w-full py-3.5 rounded-xl font-bold text-sm transition
               ${added ? 'bg-green-500 text-white' : 'bg-black text-white hover:bg-gray-800'}`}>
-            {added ? '✓ Subscription added to cart' : `Subscribe ${billing === 'yearly' ? '(Yearly · 20% off)' : '(Monthly · 10% off)'} — $${monthlyPrice.toFixed(2)}/mo`}
+            {added
+              ? '✓ Subscription added to cart'
+              : `Subscribe ${billing === 'yearly' ? '(Yearly · 20% off)' : '(Monthly · 10% off)'} — $${monthlyPrice.toFixed(2)}/mo`}
           </button>
           <p className="text-xs text-gray-400 text-center mt-3">Pause, change, or cancel anytime from your account settings</p>
         </div>
