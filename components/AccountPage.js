@@ -31,10 +31,10 @@ function EmptyState({ icon, title, description, action }) {
 function OrderHistory() {
   const { getMyOrders } = useAuth();
   const { addItem } = useCart();
-  const [orders, setOrders]   = useState([]);
+  const [orders, setOrders]     = useState([]);
   const [expanded, setExpanded] = useState(null);
   const [reordered, setReordered] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     if (!getMyOrders) return;
@@ -296,6 +296,278 @@ function LikedFormulas({ onLoadFormula, onViewFormula }) {
       ))}
     </div>
     </>
+  );
+}
+
+// ── Subscription Tab ──────────────────────────────────────────────────────────
+function SubscriptionTab() {
+  const { getMySubscription, updateSubscriptionShipping, cancelSubscription } = useAuth();
+  const [sub, setSub]                   = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [editShipping, setEditShipping] = useState(false);
+  const [shippingForm, setShippingForm] = useState({});
+  const [savingShipping, setSavingShipping] = useState(false);
+  const [cancelConfirm, setCancelConfirm]   = useState(false);
+  const [cancelling, setCancelling]         = useState(false);
+  const [msg, setMsg]                   = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    const data = await getMySubscription();
+    setSub(data);
+    if (data?.shipping) setShippingForm(data.shipping);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleSaveShipping = async () => {
+    setSavingShipping(true);
+    const result = await updateSubscriptionShipping(shippingForm);
+    setSavingShipping(false);
+    if (result.error) { setMsg({ type: 'error', text: result.error }); return; }
+    setSub(prev => ({ ...prev, shipping: shippingForm }));
+    setEditShipping(false);
+    setMsg({ type: 'success', text: 'Shipping address updated.' });
+    setTimeout(() => setMsg(null), 3000);
+  };
+
+  const handleCancel = async () => {
+    setCancelling(true);
+    const result = await cancelSubscription();
+    setCancelling(false);
+    if (result.error) { setMsg({ type: 'error', text: result.error }); return; }
+    setSub(prev => ({ ...prev, status: 'cancelled' }));
+    setCancelConfirm(false);
+    setMsg({ type: 'success', text: 'Subscription cancelled. You will not be charged again.' });
+  };
+
+  const nextBillingLabel = sub?.nextBillingDate
+    ? new Date(sub.nextBillingDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : '—';
+
+  const intervalLabel = sub?.intervalWeeks
+    ? ({ 2: 'Every 2 weeks', 4: 'Monthly', 6: 'Every 6 weeks', 8: 'Every 8 weeks' }[sub.intervalWeeks] ?? `Every ${sub.intervalWeeks} weeks`)
+    : '—';
+
+  if (loading) return (
+    <div className="text-center py-12 text-gray-400 text-sm">Loading subscription...</div>
+  );
+
+  if (!sub || sub.status === 'cancelled') return (
+    <div className="text-center py-14 bg-gray-50 rounded-2xl border border-gray-100">
+      <div className="text-5xl mb-4">📦</div>
+      <p className="font-bold text-gray-700 mb-1 text-lg">
+        {sub?.status === 'cancelled' ? 'Subscription cancelled' : 'No active subscription'}
+      </p>
+      <p className="text-sm text-gray-400 max-w-xs mx-auto leading-relaxed">
+        {sub?.status === 'cancelled'
+          ? 'Your subscription has been cancelled. Start a new one from the Shop any time.'
+          : 'Subscribe from the Shop to get your custom gels delivered automatically and save up to 20%.'}
+      </p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+
+      {/* Status banner */}
+      <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl px-5 py-4">
+        <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-bold text-green-800">Subscription Active</p>
+          <p className="text-xs text-green-600 mt-0.5">
+            Started {sub.createdAt
+              ? new Date(sub.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+              : '—'}
+          </p>
+        </div>
+        <span className="text-xs font-bold text-green-700 bg-green-100 px-3 py-1 rounded-full">Active</span>
+      </div>
+
+      {/* Billing summary */}
+      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Billing Summary</p>
+        </div>
+        <div className="px-5 py-4 space-y-3">
+          <div className="flex justify-between items-center py-1">
+            <span className="text-sm text-gray-500">Next payment</span>
+            <span className="text-sm font-bold text-gray-900">{nextBillingLabel}</span>
+          </div>
+          <div className="flex justify-between items-center py-1 border-t border-gray-50">
+            <span className="text-sm text-gray-500">Amount due</span>
+            <span className="text-2xl font-black text-gray-900">${sub.monthlyTotal?.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center py-1 border-t border-gray-50">
+            <span className="text-sm text-gray-500">Frequency</span>
+            <span className="text-sm font-semibold text-gray-700">{intervalLabel}</span>
+          </div>
+          <div className="flex justify-between items-center py-1 border-t border-gray-50">
+            <span className="text-sm text-gray-500">Subscription discount</span>
+            <span className="text-sm font-semibold text-green-600">20% off retail</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Shipments breakdown */}
+      {(sub.shipments || []).length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400">What You Receive</p>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {sub.shipments.map((shipment, si) => {
+              const activeGels = (shipment.gels || []).filter(g => g.active);
+              if (!activeGels.length) return null;
+              return (
+                <div key={si} className="px-5 py-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-6 h-6 rounded-full bg-black text-white text-xs font-black flex items-center justify-center flex-shrink-0">
+                      {si + 1}
+                    </span>
+                    <p className="text-sm font-bold text-gray-800">{shipment.label || `Shipment ${si + 1}`}</p>
+                  </div>
+                  <div className="space-y-2 pl-8">
+                    {activeGels.map((gel, gi) => (
+                      <div key={gi} className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
+                          <span className="text-sm text-gray-700 font-medium truncate">{gel.gelType || 'Custom Gel'}</span>
+                          {gel.flavor && (
+                            <span className="text-xs text-gray-400 truncate hidden sm:block">— {gel.flavor}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className="text-xs font-semibold text-gray-500">×{gel.qty} pouches</span>
+                          <span className="text-xs font-bold text-gray-800 w-14 text-right">
+                            ${((gel.unitPrice || 0) * (gel.qty || 0)).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Shipment subtotal */}
+                  <div className="mt-3 pl-8 flex justify-between items-center border-t border-gray-100 pt-2">
+                    <span className="text-xs text-gray-400">Shipment subtotal</span>
+                    <span className="text-xs font-bold text-gray-700">
+                      ${activeGels.reduce((sum, g) => sum + (g.unitPrice || 0) * (g.qty || 0), 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Shipping address */}
+      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+        <div className="flex items-center justify-between px-5 py-3 bg-gray-50 border-b border-gray-100">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Shipping Address</p>
+          {!editShipping && (
+            <button onClick={() => setEditShipping(true)}
+              className="text-xs font-bold text-gray-500 hover:text-black transition underline underline-offset-2">
+              Edit
+            </button>
+          )}
+        </div>
+
+        {!editShipping ? (
+          <div className="px-5 py-4">
+            {sub.shipping?.firstName ? (
+              <div className="text-sm text-gray-700 space-y-0.5">
+                <p className="font-semibold text-gray-900">{sub.shipping.firstName} {sub.shipping.lastName}</p>
+                <p className="text-gray-500">{sub.shipping.address}</p>
+                {sub.shipping.apt && <p className="text-gray-500">{sub.shipping.apt}</p>}
+                <p className="text-gray-500">{sub.shipping.city}, {sub.shipping.state} {sub.shipping.zip}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic py-2">No shipping address on file.</p>
+            )}
+          </div>
+        ) : (
+          <div className="px-5 py-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { key: 'firstName', label: 'First Name',            cols: 1 },
+                { key: 'lastName',  label: 'Last Name',             cols: 1 },
+                { key: 'address',   label: 'Street Address',        cols: 2 },
+                { key: 'apt',       label: 'Apt / Suite (optional)', cols: 2 },
+                { key: 'city',      label: 'City',                  cols: 1 },
+                { key: 'state',     label: 'State',                 cols: 1 },
+                { key: 'zip',       label: 'ZIP Code',              cols: 1 },
+              ].map(({ key, label, cols }) => (
+                <div key={key} className={cols === 2 ? 'col-span-2' : ''}>
+                  <label className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1 block">{label}</label>
+                  <input
+                    value={shippingForm[key] || ''}
+                    onChange={e => setShippingForm(f => ({ ...f, [key]: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-black transition"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={handleSaveShipping} disabled={savingShipping}
+                className="flex-1 bg-black text-white py-2.5 rounded-xl font-bold text-sm hover:bg-gray-800 transition disabled:opacity-50">
+                {savingShipping ? 'Saving...' : 'Save Address'}
+              </button>
+              <button onClick={() => { setEditShipping(false); setShippingForm(sub.shipping || {}); }}
+                className="border border-gray-200 text-gray-500 px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-50 transition">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Feedback */}
+      {msg && (
+        <div className={`text-sm px-4 py-3 rounded-xl flex items-center gap-2
+          ${msg.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          {msg.type === 'success' ? '✓' : '⚠️'} {msg.text}
+        </div>
+      )}
+
+      {/* Cancel subscription */}
+      <div className="border border-red-100 rounded-2xl overflow-hidden">
+        <div className="px-5 py-4 bg-red-50 border-b border-red-100">
+          <p className="text-xs font-bold uppercase tracking-widest text-red-400 mb-1">Cancel Subscription</p>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Cancelling stops all future shipments and charges. This action cannot be undone.
+          </p>
+        </div>
+        {!cancelConfirm ? (
+          <div className="px-5 py-4">
+            <button onClick={() => setCancelConfirm(true)}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-red-500 hover:text-red-700 transition">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              Cancel my subscription
+            </button>
+          </div>
+        ) : (
+          <div className="px-5 py-4 space-y-3">
+            <p className="text-sm font-semibold text-gray-800">
+              Are you sure? All upcoming shipments will be permanently stopped.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={handleCancel} disabled={cancelling}
+                className="flex-1 bg-red-500 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-red-600 transition disabled:opacity-50">
+                {cancelling ? 'Cancelling...' : 'Yes, cancel subscription'}
+              </button>
+              <button onClick={() => setCancelConfirm(false)}
+                className="border border-gray-200 text-gray-600 px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-50 transition">
+                Keep it
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+    </div>
   );
 }
 
@@ -676,8 +948,8 @@ function ProfileSettings() {
       <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Change Password</p>
         {[
-          { label: 'Current Password', value: currentPw, set: setCurrentPw },
-          { label: 'New Password',     value: newPw,     set: setNewPw     },
+          { label: 'Current Password',     value: currentPw, set: setCurrentPw },
+          { label: 'New Password',         value: newPw,     set: setNewPw     },
           { label: 'Confirm New Password', value: confirmPw, set: setConfirmPw },
         ].map(({ label, value, set }) => (
           <div key={label} className="flex flex-col gap-1">
@@ -752,10 +1024,11 @@ export default function AccountPage({ onLoadFormula, onViewCommunityFormula }) {
   const [tab, setTab] = useState('orders');
 
   const TABS = [
-    { id: 'orders',   label: 'Order History'  },
-    { id: 'formulas', label: 'Saved Formulas'  },
-    { id: 'liked',    label: 'Liked'           },
-    { id: 'profile',  label: 'Profile'         },
+    { id: 'orders',       label: 'Orders'       },
+    { id: 'subscription', label: 'Subscription' },
+    { id: 'formulas',     label: 'Saved'        },
+    { id: 'liked',        label: 'Liked'        },
+    { id: 'profile',      label: 'Profile'      },
     ...(isDev ? [{ id: 'dev', label: 'Dev' }] : []),
   ];
 
@@ -770,17 +1043,16 @@ export default function AccountPage({ onLoadFormula, onViewCommunityFormula }) {
         </h1>
       </div>
 
-      {/* Sub-tabs */}
-      <div className="flex gap-2 mb-8 bg-gray-100 p-1 rounded-2xl">
+      {/* Sub-tabs — scrollable on mobile to fit all 5+ tabs */}
+      <div className="flex gap-1.5 mb-8 bg-gray-100 p-1 rounded-2xl overflow-x-auto scrollbar-hide">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold rounded-xl transition-all
+            className={`flex-shrink-0 flex items-center justify-center py-2.5 px-3 text-sm font-semibold rounded-xl transition-all whitespace-nowrap
               ${t.id === 'dev'
                 ? (tab === t.id ? 'bg-red-500 text-white shadow-sm' : 'text-red-400 hover:text-red-600')
                 : (tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')
               }`}>
-            <span className="hidden sm:inline">{t.label}</span>
-            <span className="sm:hidden">{t.label.split(' ')[0]}</span>
+            {t.label}
           </button>
         ))}
       </div>
@@ -789,6 +1061,12 @@ export default function AccountPage({ onLoadFormula, onViewCommunityFormula }) {
         <>
           <SectionHeader title="Order History" subtitle="All your past ReFuel orders in one place." />
           <OrderHistory />
+        </>
+      )}
+      {tab === 'subscription' && (
+        <>
+          <SectionHeader title="My Subscription" subtitle="Manage your recurring shipments, shipping address, and billing." />
+          <SubscriptionTab />
         </>
       )}
       {tab === 'formulas' && (

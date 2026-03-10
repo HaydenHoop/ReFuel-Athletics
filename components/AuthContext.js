@@ -1,7 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { isDeveloper } from '../lib/devConfig';
 
 const AuthContext = createContext(null);
 
@@ -11,68 +10,53 @@ export function AuthProvider({ children }) {
 
   // ── Restore session on mount + listen for auth changes ───────────────────
   useEffect(() => {
-    // Set basic user from session immediately — no async DB calls inside the listener
-    const fromSession = (supabaseUser) => ({
-      id:        supabaseUser.id,
-      email:     supabaseUser.email,
-      name:      supabaseUser.user_metadata?.name || supabaseUser.email.split('@')[0],
-      createdAt: supabaseUser.created_at,
-      isPro:     false,
-      proStatus: null,
-      avatarUrl: null,
-    });
-
-    // Fetch profile data separately — never called from inside onAuthStateChange
-    const fetchProfile = (userId) => {
-      supabase
-        .from('profiles')
-        .select('is_pro, pro_status, avatar_url, ban_status, ban_reason, ban_expires')
-        .eq('user_id', userId)
-        .maybeSingle()
-        .then(({ data: profile }) => {
-          // If banned, sign out immediately and surface banned state to UI
-          if (profile?.ban_status === 'banned') {
-            supabase.auth.signOut();
-            setUser({ banned: true, banReason: profile.ban_reason || null, banExpires: profile.ban_expires || null });
-            setLoading(false);
-            return;
-          }
-          if (!profile) return;
-          setUser(prev => {
-            if (!prev || prev.id !== userId) return prev; // guard stale update
-            return {
-              ...prev,
-              isPro:     profile.is_pro     || false,
-              proStatus: profile.pro_status || null,
-              avatarUrl: profile.avatar_url || null,
-            };
-          });
-        });
-    };
-
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(fromSession(session.user));
-        fetchProfile(session.user.id);
-      }
+      if (session?.user) fetchProfile(session.user);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(prev => {
-          // If same user, keep existing profile enrichment (isPro etc) — don't wipe it
-          if (prev?.id === session.user.id) return prev;
-          fetchProfile(session.user.id);
-          return fromSession(session.user);
-        });
-      } else {
-        setUser(null);
-      }
+      if (session?.user) fetchProfile(session.user);
+      else setUser(null);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // ── Fetch profile (ban status, isPro, avatar) ─────────────────────────────
+  const fetchProfile = async (authUser) => {
+    const base = {
+      id:        authUser.id,
+      email:     authUser.email,
+      name:      authUser.user_metadata?.name || authUser.email.split('@')[0],
+      createdAt: authUser.created_at,
+    };
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_pro, pro_status, avatar_url, ban_status, ban_reason, ban_expires')
+      .eq('user_id', authUser.id)
+      .maybeSingle();
+
+    if (profile?.ban_status === 'banned') {
+      setUser({
+        ...base,
+        banned:     true,
+        banReason:  profile.ban_reason,
+        banExpires: profile.ban_expires,
+      });
+      return;
+    }
+
+    setUser({
+      ...base,
+      isPro:     profile?.is_pro     || false,
+      proStatus: profile?.pro_status || null,
+      avatarUrl: profile?.avatar_url || null,
+      isDev:     authUser.email === 'haydenh.refuel@gmail.com',
+    });
+  };
+
+  const isDev = user?.isDev || false;
 
   // ── Sign up ───────────────────────────────────────────────────────────────
   const signUp = useCallback(async ({ name, email, password }) => {
@@ -94,25 +78,20 @@ export function AuthProvider({ children }) {
 
   // ── Sign in ───────────────────────────────────────────────────────────────
   const signIn = useCallback(async ({ email, password }) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       if (error.message.includes('Invalid login')) return { error: 'Incorrect email or password.' };
       return { error: error.message };
     }
-    // Check ban status before allowing through
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (authUser) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('ban_status, ban_reason, ban_expires')
-        .eq('user_id', authUser.id)
-        .maybeSingle();
-      if (profile?.ban_status === 'banned') {
-        await supabase.auth.signOut();
-        setUser({ banned: true, banReason: profile.ban_reason || null, banExpires: profile.ban_expires || null });
-        return { banned: true, banReason: profile.ban_reason };
-      }
-    }
+    if (data?.user) await fetchProfile(data.user);
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('ban_status')
+      .eq('user_id', data.user.id)
+      .maybeSingle();
+    if (profile?.ban_status === 'banned') return { error: 'banned' };
+
     return { success: true };
   }, []);
 
@@ -126,15 +105,19 @@ export function AuthProvider({ children }) {
   const saveOrder = useCallback(async (orderData) => {
     if (!user) return;
     await supabase.from('orders').insert({
-      user_id:       user.id,
-      order_ref:     orderData.id,
-      items:         orderData.items,
-      shipping:      orderData.shipping,
-      subtotal:      orderData.subtotal,
-      shipping_cost: orderData.shippingCost,
-      tax:           orderData.tax,
-      total:         orderData.total,
-      status:        orderData.status || 'Confirmed',
+      user_id:         user.id,
+      order_ref:       orderData.id,
+      items:           orderData.items,
+      shipping:        orderData.shipping,
+      subtotal:        orderData.subtotal,
+      shipping_cost:   orderData.shippingCost,
+      tax:             orderData.tax,
+      total:           orderData.total,
+      status:          orderData.status     || 'Confirmed',
+      promo_code:      orderData.promoCode      || null,
+      promo_discount:  orderData.promoDiscount  || 0,
+      is_subscription: orderData.isSubscription || false,
+      sub_interval:    orderData.subInterval    || null,
     });
   }, [user]);
 
@@ -148,16 +131,86 @@ export function AuthProvider({ children }) {
       .order('created_at', { ascending: false });
     if (error) return [];
     return data.map(o => ({
-      id:           o.order_ref,
-      date:         o.created_at,
-      items:        o.items,
-      shipping:     o.shipping,
-      subtotal:     o.subtotal,
-      shippingCost: o.shipping_cost,
-      tax:          o.tax,
-      total:        o.total,
-      status:       o.status,
+      id:             o.order_ref,
+      date:           o.created_at,
+      items:          o.items,
+      shipping:       o.shipping,
+      subtotal:       o.subtotal,
+      shippingCost:   o.shipping_cost,
+      tax:            o.tax,
+      total:          o.total,
+      status:         o.status,
+      promoCode:      o.promo_code,
+      promoDiscount:  o.promo_discount,
+      isSubscription: o.is_subscription,
+      subInterval:    o.sub_interval,
     }));
+  }, [user]);
+
+  // ── Save subscription ─────────────────────────────────────────────────────
+  // subscriptionData: { shipments, intervalWeeks, shipping, monthlyTotal, nextBillingDate }
+  const saveSubscription = useCallback(async (subscriptionData) => {
+    if (!user) return { error: 'Not signed in.' };
+    const { error } = await supabase.from('subscriptions').upsert(
+      {
+        user_id:           user.id,
+        shipments:         subscriptionData.shipments,
+        interval_weeks:    subscriptionData.intervalWeeks,
+        shipping:          subscriptionData.shipping,
+        monthly_total:     subscriptionData.monthlyTotal,
+        next_billing_date: subscriptionData.nextBillingDate,
+        status:            'active',
+        created_at:        new Date().toISOString(),
+        updated_at:        new Date().toISOString(),
+      },
+      { onConflict: 'user_id' }
+    );
+    if (error) return { error: error.message };
+    return { success: true };
+  }, [user]);
+
+  // ── Get subscription ──────────────────────────────────────────────────────
+  const getMySubscription = useCallback(async () => {
+    if (!user) return null;
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (error || !data) return null;
+    return {
+      id:              data.id,
+      shipments:       data.shipments       || [],
+      intervalWeeks:   data.interval_weeks  || 4,
+      shipping:        data.shipping        || {},
+      monthlyTotal:    data.monthly_total   || 0,
+      nextBillingDate: data.next_billing_date,
+      status:          data.status          || 'active',
+      createdAt:       data.created_at,
+      updatedAt:       data.updated_at,
+    };
+  }, [user]);
+
+  // ── Update subscription shipping ──────────────────────────────────────────
+  const updateSubscriptionShipping = useCallback(async (shippingData) => {
+    if (!user) return { error: 'Not signed in.' };
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({ shipping: shippingData, updated_at: new Date().toISOString() })
+      .eq('user_id', user.id);
+    if (error) return { error: error.message };
+    return { success: true };
+  }, [user]);
+
+  // ── Cancel subscription ───────────────────────────────────────────────────
+  const cancelSubscription = useCallback(async () => {
+    if (!user) return { error: 'Not signed in.' };
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+      .eq('user_id', user.id);
+    if (error) return { error: error.message };
+    return { success: true };
   }, [user]);
 
   // ── Save formula ──────────────────────────────────────────────────────────
@@ -232,52 +285,48 @@ export function AuthProvider({ children }) {
     return { success: true };
   }, [user]);
 
-
   // ── Upload avatar ─────────────────────────────────────────────────────────
-  // Accepts a Blob (always JPEG from the crop canvas)
   const uploadAvatar = useCallback(async (blob) => {
     if (!user) return { error: 'Not signed in.' };
-    // Fixed .jpg path — avoids extension mismatches across uploads
-    const path = `${user.id}/avatar.jpg`;
+    const path = `avatars/${user.id}/avatar.jpg`;
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
     if (uploadError) return { error: uploadError.message };
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
-    const url = `${publicUrl}?v=${Date.now()}`;
-    const { error: profileError } = await supabase.from('profiles').upsert(
-      { user_id: user.id, avatar_url: url },
+    const busted = `${publicUrl}?t=${Date.now()}`;
+    await supabase.from('profiles').upsert(
+      { user_id: user.id, avatar_url: busted },
       { onConflict: 'user_id' }
     );
-    if (profileError) return { error: profileError.message };
-    setUser(prev => prev ? { ...prev, avatarUrl: url } : prev);
-    return { success: true, url };
-  }, [user]);
-
-  // ── Request pro status ────────────────────────────────────────────────────
-  const requestPro = useCallback(async () => {
-    if (!user) return { error: 'Not signed in.' };
-    const { error } = await supabase.from('profiles').upsert(
-      { user_id: user.id, pro_status: 'pending', requester_name: user.name, requester_email: user.email },
-      { onConflict: 'user_id' }
-    );
-    if (error) return { error: error.message };
-    fetch('/api/email/pro-request', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: user.name, email: user.email, userId: user.id }),
-    }).catch(() => {});
-    setUser(prev => prev ? { ...prev, proStatus: 'pending' } : prev);
+    setUser(prev => ({ ...prev, avatarUrl: busted }));
     return { success: true };
   }, [user]);
 
-  const isDev = isDeveloper(user?.email);
+  // ── Request Pro ───────────────────────────────────────────────────────────
+  const requestPro = useCallback(async () => {
+    if (!user) return { error: 'Not signed in.' };
+    const { error } = await supabase.from('profiles').upsert(
+      { user_id: user.id, pro_status: 'pending' },
+      { onConflict: 'user_id' }
+    );
+    if (error) return { error: error.message };
+    setUser(prev => ({ ...prev, proStatus: 'pending' }));
+    fetch('/api/email/pro-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: user.name, email: user.email }),
+    }).catch(() => {});
+    return { success: true };
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{
       user, loading, isDev,
       signUp, signIn, signOut,
       saveOrder, getMyOrders,
+      saveSubscription, getMySubscription,
+      updateSubscriptionShipping, cancelSubscription,
       saveFormula, getSavedFormulas, deleteFormula,
       updateProfile, uploadAvatar, requestPro,
     }}>
