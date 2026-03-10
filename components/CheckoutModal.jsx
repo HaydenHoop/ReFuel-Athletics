@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -20,6 +20,15 @@ const US_STATES = [
   'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
   'VA','WA','WV','WI','WY',
 ];
+
+// ── Promo codes ───────────────────────────────────────────────────────────────
+const PROMO_CODES = {
+  FIRSTORDER: { discount: 0.15, label: '15% off', description: 'First order discount' },
+};
+
+function applyPromo(code) {
+  return PROMO_CODES[code?.trim().toUpperCase()] || null;
+}
 
 function ProgressSteps({ step }) {
   const steps = ['Shipping', 'Payment', 'Review'];
@@ -178,7 +187,7 @@ function ShippingStep({ data, onChange, onNext, isSubscription, onToggleSubscrip
 
 // ── Step 2: Payment (real Stripe Elements) ────────────────────────────────────
 function PaymentForm({ onBack, onReady }) {
-  const stripe  = useStripe();
+  const stripe   = useStripe();
   const elements = useElements();
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
@@ -230,13 +239,82 @@ function PaymentForm({ onBack, onReady }) {
   );
 }
 
+// ── Promo Code Input ──────────────────────────────────────────────────────────
+function PromoCodeInput({ appliedPromo, onApply }) {
+  const [code, setCode]       = useState('');
+  const [error, setError]     = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleApply = () => {
+    setError('');
+    setSuccess('');
+    const promo = applyPromo(code);
+    if (!promo) {
+      setError('Invalid promo code. Try FIRSTORDER for 15% off.');
+      return;
+    }
+    onApply({ code: code.trim().toUpperCase(), ...promo });
+    setSuccess(`${promo.label} applied!`);
+    setCode('');
+  };
+
+  const handleRemove = () => {
+    onApply(null);
+    setSuccess('');
+    setError('');
+  };
+
+  if (appliedPromo) {
+    return (
+      <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className="text-green-600 font-bold text-sm">✓</span>
+          <div>
+            <p className="text-sm font-bold text-green-800">{appliedPromo.code}</p>
+            <p className="text-xs text-green-600">{appliedPromo.label} · {appliedPromo.description}</p>
+          </div>
+        </div>
+        <button onClick={handleRemove} className="text-xs text-green-600 hover:text-green-800 font-semibold transition">
+          Remove
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Promo Code</p>
+      <div className="flex gap-2">
+        <input
+          value={code}
+          onChange={e => { setCode(e.target.value.toUpperCase()); setError(''); setSuccess(''); }}
+          onKeyDown={e => e.key === 'Enter' && handleApply()}
+          placeholder="Enter code (e.g. FIRSTORDER)"
+          maxLength={20}
+          className={`flex-1 border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-black transition uppercase tracking-widest
+            ${error ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+        />
+        <button
+          onClick={handleApply}
+          disabled={!code.trim()}
+          className="px-4 py-2.5 bg-black text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition disabled:opacity-40">
+          Apply
+        </button>
+      </div>
+      {error   && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {success && <p className="text-xs text-green-600 mt-1 font-semibold">{success}</p>}
+    </div>
+  );
+}
+
 // ── Step 3: Review ────────────────────────────────────────────────────────────
-function ReviewStep({ shipping, items, subtotal, isSubscription, subInterval, onBack, onPlace, placing }) {
+function ReviewStep({ shipping, items, subtotal, isSubscription, subInterval, promoCode, onPromoChange, onBack, onPlace, placing }) {
   const shippingRates = { standard: 6.99, express: 14.99, overnight: 29.99 };
   const shippingCost  = subtotal >= 50 ? 0 : (shippingRates[shipping.shippingMethod] ?? 6.99);
-  const discount      = isSubscription ? subtotal * 0.10 : 0;
-  const tax   = (subtotal - discount) * TAX_RATE;
-  const total = subtotal - discount + tax + shippingCost;
+  const subDiscount   = isSubscription ? subtotal * 0.10 : 0;
+  const promoDiscount = promoCode ? (subtotal - subDiscount) * promoCode.discount : 0;
+  const tax           = (subtotal - subDiscount - promoDiscount) * TAX_RATE;
+  const total         = subtotal - subDiscount - promoDiscount + tax + shippingCost;
 
   return (
     <div className="space-y-5">
@@ -262,7 +340,7 @@ function ReviewStep({ shipping, items, subtotal, isSubscription, subInterval, on
         <p className="text-gray-500 text-xs mt-1">{shipping.email}</p>
       </div>
 
-      {/* Totals */}
+      {/* Subscription banner */}
       {isSubscription && (
         <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -274,11 +352,22 @@ function ReviewStep({ shipping, items, subtotal, isSubscription, subInterval, on
           </div>
         </div>
       )}
+
+      {/* Promo code input */}
+      <PromoCodeInput appliedPromo={promoCode} onApply={onPromoChange} />
+
+      {/* Totals */}
       <div className="border-t border-gray-100 pt-4 space-y-2 text-sm">
         <div className="flex justify-between text-gray-500"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
         {isSubscription && (
           <div className="flex justify-between text-green-600 font-medium">
-            <span>Subscription discount (10%)</span><span>−${discount.toFixed(2)}</span>
+            <span>Subscription discount (10%)</span><span>−${subDiscount.toFixed(2)}</span>
+          </div>
+        )}
+        {promoCode && (
+          <div className="flex justify-between text-green-600 font-semibold">
+            <span>{promoCode.code} ({promoCode.label})</span>
+            <span>−${promoDiscount.toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between text-gray-500">
@@ -296,7 +385,7 @@ function ReviewStep({ shipping, items, subtotal, isSubscription, subInterval, on
           className="flex-shrink-0 border border-gray-200 text-gray-700 px-4 py-3.5 rounded-xl font-bold hover:bg-gray-50 transition text-sm">
           ← Back
         </button>
-        <button onClick={onPlace} disabled={placing}
+        <button onClick={() => onPlace(total, subDiscount, promoDiscount, tax, shippingCost)} disabled={placing}
           className="flex-1 bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 transition disabled:opacity-60 flex items-center justify-center gap-2">
           {placing
             ? <><span className="animate-spin inline-block">⏳</span> Processing payment...</>
@@ -345,12 +434,13 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
   const [step, setStep]           = useState(0);
   const [confirmed, setConfirmed] = useState(false);
   const [orderId, setOrderId]     = useState('');
-  const [clientSecret, setClientSecret] = useState('');
-  const [stripeReady, setStripeReady]   = useState(null); // { stripe, elements }
-  const [placing, setPlacing]           = useState(false);
-  const [paymentError, setPaymentError] = useState('');
+  const [clientSecret, setClientSecret]   = useState('');
+  const [stripeReady, setStripeReady]     = useState(null); // { stripe, elements }
+  const [placing, setPlacing]             = useState(false);
+  const [paymentError, setPaymentError]   = useState('');
   const [isSubscription, setIsSubscription] = useState(false);
   const [subInterval, setSubInterval]       = useState(4); // weeks
+  const [promoCode, setPromoCode]           = useState(null); // { code, discount, label, description }
 
   const [shipping, setShipping] = useState({
     firstName: '', lastName: '', email: '', address: '',
@@ -361,21 +451,22 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
 
   const shippingRates = { standard: 6.99, express: 14.99, overnight: 29.99 };
   const shippingCost  = subtotal >= 50 ? 0 : (shippingRates[shipping.shippingMethod] ?? 6.99);
-  const discount      = isSubscription ? subtotal * 0.10 : 0;
-  const tax   = (subtotal - discount) * TAX_RATE;
-  const total = subtotal - discount + tax + shippingCost;
+  const subDiscount   = isSubscription ? subtotal * 0.10 : 0;
+  const promoDiscount = promoCode ? (subtotal - subDiscount) * promoCode.discount : 0;
+  const tax           = (subtotal - subDiscount - promoDiscount) * TAX_RATE;
+  const total         = subtotal - subDiscount - promoDiscount + tax + shippingCost;
 
   // Create PaymentIntent when moving to payment step
   const handleShippingNext = async () => {
     setStep(1);
     if (clientSecret) return; // already created
     try {
-      // Recalculate inline so we always have a fresh accurate total
       const rates = { standard: 6.99, express: 14.99, overnight: 29.99 };
       const sc    = subtotal >= 50 ? 0 : (rates[shipping.shippingMethod] ?? 6.99);
-      const disc  = isSubscription ? subtotal * 0.10 : 0;
-      const t     = (subtotal - disc) * TAX_RATE;
-      const amt   = subtotal - disc + t + sc;
+      const sd    = isSubscription ? subtotal * 0.10 : 0;
+      const pd    = promoCode ? (subtotal - sd) * promoCode.discount : 0;
+      const t     = (subtotal - sd - pd) * TAX_RATE;
+      const amt   = subtotal - sd - pd + t + sc;
 
       if (!amt || amt < 0.5) {
         console.error('Cart is empty or total too low');
@@ -403,7 +494,7 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
   };
 
   // Final — confirm payment with Stripe then save order
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async (finalTotal, finalSubDiscount, finalPromoDiscount, finalTax, finalShippingCost) => {
     if (!stripeReady) return;
     const { stripe, elements, setError } = stripeReady;
 
@@ -413,7 +504,7 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: 'https://refuelgel.com', // fallback for redirect-based methods
+        return_url: 'https://refuelgel.com',
         payment_method_data: {
           billing_details: {
             name:  `${shipping.firstName} ${shipping.lastName}`,
@@ -428,13 +519,13 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
           },
         },
       },
-      redirect: 'if_required', // stay on page for card payments
+      redirect: 'if_required',
     });
 
     if (error) {
       setPlacing(false);
       setPaymentError(error.message ?? 'Payment failed. Please try again.');
-      setStep(1); // send back to payment step
+      setStep(1);
       return;
     }
 
@@ -442,19 +533,21 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
       const id = paymentIntent.id.slice(-8).toUpperCase();
       setOrderId(id);
 
-      // Save order to Supabase
       if (user) {
         await saveOrder({
-          id:           `ORD-${id}`,
+          id:            `ORD-${id}`,
           items,
           shipping,
           subtotal,
-          shippingCost,
-          tax,
-          total,
-          status: 'Confirmed',
+          shippingCost:  finalShippingCost,
+          tax:           finalTax,
+          total:         finalTotal,
+          status:        'Confirmed',
           isSubscription,
-          subInterval: isSubscription ? subInterval : null,
+          subInterval:   isSubscription ? subInterval : null,
+          promoCode:     promoCode?.code || null,
+          promoDiscount: finalPromoDiscount,
+          subDiscount:   finalSubDiscount,
         });
       }
 
@@ -466,12 +559,17 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
           orderId: id,
           firstName: shipping.firstName,
           email:     shipping.email,
-          items, shipping, subtotal, shippingCost, tax, total,
+          items, shipping, subtotal,
+          shippingCost:  finalShippingCost,
+          tax:           finalTax,
+          total:         finalTotal,
+          promoCode:     promoCode?.code || null,
+          promoDiscount: finalPromoDiscount,
+          subDiscount:   finalSubDiscount,
         }),
       }).catch(err => console.warn('Order email failed:', err));
 
-      // Save review token FIRST, then schedule the email
-      // (email must only send after token exists in DB or it will be "expired")
+      // Save review token then schedule email
       const reviewToken = `${id}-${Math.random().toString(36).slice(2, 10)}`;
       try {
         await fetch('/api/reviews/token', {
@@ -512,6 +610,7 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
     setPaymentError('');
     setIsSubscription(false);
     setSubInterval(4);
+    setPromoCode(null);
     onClose();
   };
 
@@ -545,7 +644,7 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
             <>
               <ProgressSteps step={step} />
 
-              {/* Payment error banner (shown if payment fails at step 2) */}
+              {/* Payment error banner */}
               {paymentError && (
                 <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
                   {paymentError}
@@ -594,6 +693,8 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
                         subtotal={subtotal}
                         isSubscription={isSubscription}
                         subInterval={subInterval}
+                        promoCode={promoCode}
+                        onPromoChange={setPromoCode}
                         onBack={() => setStep(1)}
                         onPlace={handlePlaceOrder}
                         placing={placing}

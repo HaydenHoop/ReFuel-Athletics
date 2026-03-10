@@ -1,13 +1,18 @@
 "use client";
 import { useCart } from './CartContext';
 
-export default function CartDrawer({ onCheckout }) {
+export default function CartDrawer({ onCheckout, onViewDeals }) {
   const { items, updateQty, removeItem, subtotal, itemCount, isOpen, setIsOpen } = useCart();
 
   const TAX_RATE = 0.08;
   const SHIPPING = subtotal >= 50 ? 0 : 6.99;
   const tax = subtotal * TAX_RATE;
   const total = subtotal + tax + SHIPPING;
+
+  const handleViewDeals = () => {
+    setIsOpen(false);
+    onViewDeals?.();
+  };
 
   return (
     <>
@@ -42,6 +47,21 @@ export default function CartDrawer({ onCheckout }) {
             ✕
           </button>
         </div>
+
+        {/* Deals nudge banner */}
+        <button
+          onClick={handleViewDeals}
+          className="mx-4 mt-3 flex items-center justify-between px-4 py-3 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 transition group"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg">🏷️</span>
+            <div className="text-left">
+              <p className="text-xs font-extrabold text-amber-900 leading-none mb-0.5">Check deals to save</p>
+              <p className="text-xs text-amber-700/70">Bundles, promo codes &amp; free flask offers</p>
+            </div>
+          </div>
+          <span className="text-amber-500 group-hover:translate-x-0.5 transition-transform text-sm font-bold">→</span>
+        </button>
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
