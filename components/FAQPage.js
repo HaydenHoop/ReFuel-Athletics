@@ -4,7 +4,6 @@ import { useState } from 'react';
 const FAQS = [
   {
     category: 'Product & Ingredients',
-    icon: '⚗️',
     questions: [
       {
         q: 'What ingredients are in the gel?',
@@ -42,7 +41,6 @@ const FAQS = [
   },
   {
     category: 'The Reusable Packet',
-    icon: '🧴',
     questions: [
       {
         q: 'How do I fill the reusable packet?',
