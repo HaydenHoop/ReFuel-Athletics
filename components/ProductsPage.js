@@ -416,9 +416,9 @@ const YEARLY_DISCOUNT  = 0.20;
 
 function SavedFormulaLoader({ linkedFormula, onLink }) {
   const { user, getSavedFormulas } = useAuth();
-  const [open, setOpen]       = useState(false);
+  const [open, setOpen]         = useState(false);
   const [formulas, setFormulas] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
 
   const handleOpen = async () => {
     setOpen(true);
@@ -531,12 +531,11 @@ function GelRow({ gelId, row, active, onToggle, onUpdate }) {
             </select>
           </div>
 
-          {gelId === 'custom' && (
-            <SavedFormulaLoader
-              linkedFormula={row.linkedFormula}
-              onLink={(formula) => onUpdate(gelId, 'linkedFormula', formula)}
-            />
-          )}
+          {/* Load saved formula — available for both gel types */}
+          <SavedFormulaLoader
+            linkedFormula={row.linkedFormula}
+            onLink={(formula) => onUpdate(gelId, 'linkedFormula', formula)}
+          />
         </div>
       )}
     </div>
@@ -628,7 +627,7 @@ function SubscriptionSection({ onSubscribe }) {
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Never run out</p>
         <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight mb-2">Subscribe &amp; Save</h2>
         <p className="text-gray-500 text-sm max-w-xl">
-          Set up auto-ship for your formula. Choose monthly or yearly billing, one or two shipments per month, and mix gel types per shipment. Link a saved custom formula to any shipment. Cancel or pause anytime.
+          Set up auto-ship for your formula. Choose monthly or yearly billing, one or two shipments per month, and mix gel types per shipment. Link a saved formula to any shipment. Cancel or pause anytime.
         </p>
       </div>
 
@@ -848,7 +847,6 @@ export default function ProductsPage({ onGoToQuiz, onGoToRaceDayQuiz, onViewProd
   const dealsRef = externalDealsRef || internalDealsRef;
 
   const handleSubscribe = (config) => {
-    // Add as a recurring cart item — billing + shipment details in subtitle
     const label = config.billing === 'yearly'
       ? `Yearly · ${config.shipments === 2 ? '2 shipments/mo' : '1 shipment/mo'} · 20% off`
       : `Monthly · ${config.shipments === 2 ? '2 shipments/mo' : '1 shipment/mo'} · 10% off`;
