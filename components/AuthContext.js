@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
       isPro:     profile?.is_pro     || false,
       proStatus: profile?.pro_status || null,
       avatarUrl: profile?.avatar_url || null,
-      isDev:     authUser.email === 'haydenh.refuel@gmail.com',
+      isDev:     authUser.email === 'haydenthooper@icloud.com',
     });
   };
 

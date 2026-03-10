@@ -1043,11 +1043,11 @@ export default function AccountPage({ onLoadFormula, onViewCommunityFormula }) {
         </h1>
       </div>
 
-      {/* Sub-tabs — scrollable on mobile to fit all 5+ tabs */}
-      <div className="flex gap-1.5 mb-8 bg-gray-100 p-1 rounded-2xl overflow-x-auto scrollbar-hide">
+      {/* Sub-tabs — scrollable on mobile to fit all tabs without squishing */}
+      <div className="flex gap-1 mb-8 bg-gray-100 p-1 rounded-2xl overflow-x-auto">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex-shrink-0 flex items-center justify-center py-2.5 px-3 text-sm font-semibold rounded-xl transition-all whitespace-nowrap
+            className={`flex-1 min-w-[72px] flex items-center justify-center py-2.5 px-2 text-sm font-semibold rounded-xl transition-all whitespace-nowrap
               ${t.id === 'dev'
                 ? (tab === t.id ? 'bg-red-500 text-white shadow-sm' : 'text-red-400 hover:text-red-600')
                 : (tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')
