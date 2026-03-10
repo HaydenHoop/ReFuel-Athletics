@@ -400,6 +400,218 @@ function BundleModal({ onClose, onAddBundle }) {
   );
 }
 
+// ── Subscription Section ──────────────────────────────────────────────────────
+const GEL_TYPES = [
+  { id: 'custom', name: 'Custom Gel Powder', price: 1.88, unit: 'per pouch' },
+  { id: 'race-day', name: 'Race Day Gel', price: 2.49, unit: 'per pouch' },
+];
+
+const FLAVORS = ['Neutral / Unflavored', 'Berry Blast', 'Citrus Surge', 'Tropical', 'Watermelon'];
+
+const POUCH_OPTIONS = [10, 20, 30, 40, 50];
+
+// Discount: monthly = 10%, yearly = 20%
+const MONTHLY_DISCOUNT = 0.10;
+const YEARLY_DISCOUNT  = 0.20;
+
+function ShipmentConfigurator({ shipment, index, onChange }) {
+  return (
+    <div className="border border-gray-200 rounded-2xl overflow-hidden">
+      <div className="bg-gray-50 px-5 py-3 border-b border-gray-100">
+        <p className="text-xs font-black uppercase tracking-widest text-gray-500">
+          Shipment {index + 1}{index === 0 ? ' — First of month' : ' — Mid month'}
+        </p>
+      </div>
+      <div className="px-5 py-4 space-y-4">
+
+        {/* Gel type */}
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Gel Type</p>
+          <div className="flex gap-2">
+            {GEL_TYPES.map(g => (
+              <button key={g.id} onClick={() => onChange('gelType', g.id)}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-bold border transition text-left
+                  ${shipment.gelType === g.id ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-600 hover:border-gray-400'}`}>
+                <span className="block text-xs font-black leading-tight">{g.name}</span>
+                <span className={`text-xs font-normal ${shipment.gelType === g.id ? 'text-white/60' : 'text-gray-400'}`}>${g.price}/pouch</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Quantity */}
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Pouches per shipment</p>
+          <div className="flex gap-2">
+            {POUCH_OPTIONS.map(n => (
+              <button key={n} onClick={() => onChange('qty', n)}
+                className={`flex-1 py-2 rounded-xl text-sm font-bold border transition
+                  ${shipment.qty === n ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-500 hover:border-gray-400'}`}>
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Flavor */}
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Flavor</p>
+          <select
+            value={shipment.flavor}
+            onChange={e => onChange('flavor', e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-black bg-white transition"
+          >
+            {FLAVORS.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+const DEFAULT_SHIPMENT = { gelType: 'custom', qty: 20, flavor: 'Neutral / Unflavored' };
+
+function SubscriptionSection({ onSubscribe }) {
+  const [billing, setBilling]         = useState('monthly'); // 'monthly' | 'yearly'
+  const [shipments, setShipments]     = useState(1);          // 1 or 2 per month
+  const [ship1, setShip1]             = useState({ ...DEFAULT_SHIPMENT });
+  const [ship2, setShip2]             = useState({ ...DEFAULT_SHIPMENT });
+  const [added, setAdded]             = useState(false);
+
+  const discount    = billing === 'yearly' ? YEARLY_DISCOUNT : MONTHLY_DISCOUNT;
+  const discountPct = billing === 'yearly' ? '20%' : '10%';
+
+  const calcShipment = (s) => {
+    const gel = GEL_TYPES.find(g => g.id === s.gelType);
+    return gel.price * s.qty;
+  };
+
+  const monthlyRetail = calcShipment(ship1) + (shipments === 2 ? calcShipment(ship2) : 0);
+  const monthlyPrice  = +(monthlyRetail * (1 - discount)).toFixed(2);
+  const yearlyTotal   = +(monthlyPrice * 12).toFixed(2);
+
+  const updateShip = (which, field, value) => {
+    if (which === 0) setShip1(s => ({ ...s, [field]: value }));
+    else             setShip2(s => ({ ...s, [field]: value }));
+  };
+
+  const handleSubscribe = () => {
+    const config = {
+      billing,
+      shipments,
+      ship1,
+      ship2: shipments === 2 ? ship2 : null,
+      monthlyPrice,
+      yearlyTotal,
+      discount,
+    };
+    onSubscribe?.(config);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2500);
+  };
+
+  return (
+    <div className="mt-14">
+      {/* Header */}
+      <div className="mb-8">
+        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Never run out</p>
+        <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight mb-2">Subscribe &amp; Save</h2>
+        <p className="text-gray-500 text-sm max-w-xl">
+          Set up auto-ship for your formula. Choose monthly or yearly billing, one or two shipments per month, and configure each shipment independently. Cancel or pause anytime from your account.
+        </p>
+      </div>
+
+      <div className="border border-gray-200 rounded-2xl overflow-hidden">
+
+        {/* Billing toggle */}
+        <div className="p-5 border-b border-gray-100">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Billing cycle</p>
+          <div className="flex gap-3">
+            {[
+              { id: 'monthly', label: 'Monthly', sub: '10% off every shipment' },
+              { id: 'yearly',  label: 'Yearly',  sub: '20% off — best value', badge: 'Save extra' },
+            ].map(opt => (
+              <button key={opt.id} onClick={() => setBilling(opt.id)}
+                className={`flex-1 p-4 rounded-xl border-2 text-left transition
+                  ${billing === opt.id ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-gray-400 bg-white'}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-extrabold text-sm">{opt.label}</span>
+                  {opt.badge && (
+                    <span className={`text-xs font-black px-2 py-0.5 rounded-full ${billing === opt.id ? 'bg-white text-black' : 'bg-black text-white'}`}>
+                      {opt.badge}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-xs ${billing === opt.id ? 'text-white/60' : 'text-gray-400'}`}>{opt.sub}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Shipments per month */}
+        <div className="p-5 border-b border-gray-100">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Shipments per month</p>
+          <div className="flex gap-3">
+            {[
+              { n: 1, label: '1 shipment', sub: 'Start of month' },
+              { n: 2, label: '2 shipments', sub: 'Start + mid month' },
+            ].map(opt => (
+              <button key={opt.n} onClick={() => setShipments(opt.n)}
+                className={`flex-1 p-4 rounded-xl border-2 text-left transition
+                  ${shipments === opt.n ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-gray-400 bg-white'}`}>
+                <p className={`font-extrabold text-sm mb-0.5 ${shipments === opt.n ? 'text-white' : 'text-gray-900'}`}>{opt.label}</p>
+                <p className={`text-xs ${shipments === opt.n ? 'text-white/60' : 'text-gray-400'}`}>{opt.sub}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Shipment configurators */}
+        <div className="p-5 space-y-4 border-b border-gray-100">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Configure your shipment{shipments === 2 ? 's' : ''}</p>
+          <ShipmentConfigurator shipment={ship1} index={0} onChange={(f, v) => updateShip(0, f, v)} />
+          {shipments === 2 && (
+            <ShipmentConfigurator shipment={ship2} index={1} onChange={(f, v) => updateShip(1, f, v)} />
+          )}
+        </div>
+
+        {/* Pricing summary + CTA */}
+        <div className="p-5 bg-gray-50">
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Your price</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-extrabold text-gray-900">${monthlyPrice.toFixed(2)}</span>
+                <span className="text-sm text-gray-400">/ month</span>
+              </div>
+              {billing === 'yearly' && (
+                <p className="text-xs text-gray-500 mt-0.5">Billed as ${yearlyTotal} / year</p>
+              )}
+              <p className="text-xs text-green-600 font-semibold mt-1">
+                {discountPct} off retail · Save ${(monthlyRetail - monthlyPrice).toFixed(2)}/mo
+              </p>
+            </div>
+            <div className="text-right text-xs text-gray-400 space-y-0.5">
+              <p>Retail: <span className="line-through">${monthlyRetail.toFixed(2)}/mo</span></p>
+              <p>{shipments === 2 ? '2 shipments' : '1 shipment'} · {billing}</p>
+              <p>Cancel anytime</p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSubscribe}
+            className={`w-full py-3.5 rounded-xl font-bold text-sm transition
+              ${added ? 'bg-green-500 text-white' : 'bg-black text-white hover:bg-gray-800'}`}>
+            {added ? '✓ Subscription added to cart' : `Subscribe ${billing === 'yearly' ? '(Yearly · 20% off)' : '(Monthly · 10% off)'} — $${monthlyPrice.toFixed(2)}/mo`}
+          </button>
+          <p className="text-xs text-gray-400 text-center mt-3">Pause, change, or cancel anytime from your account settings</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Deals Section ─────────────────────────────────────────────────────────────
 const DEALS = [
   {
@@ -519,6 +731,22 @@ export default function ProductsPage({ onGoToQuiz, onGoToRaceDayQuiz, onViewProd
   const internalDealsRef = useRef(null);
   const dealsRef = externalDealsRef || internalDealsRef;
 
+  const handleSubscribe = (config) => {
+    // Add as a recurring cart item — billing + shipment details in subtitle
+    const label = config.billing === 'yearly'
+      ? `Yearly · ${config.shipments === 2 ? '2 shipments/mo' : '1 shipment/mo'} · 20% off`
+      : `Monthly · ${config.shipments === 2 ? '2 shipments/mo' : '1 shipment/mo'} · 10% off`;
+    addItem({
+      id: `subscription-${Date.now()}`,
+      name: 'Gel Subscription',
+      subtitle: label,
+      price: config.monthlyPrice,
+      qty: 1,
+      isSubscription: true,
+      subscriptionConfig: config,
+    });
+  };
+
   const handleAddToCart = (product) => {
     addItem({
       id: `${product.id}-${Date.now()}`,
@@ -612,6 +840,8 @@ export default function ProductsPage({ onGoToQuiz, onGoToRaceDayQuiz, onViewProd
             />
           ))}
         </div>
+
+        <SubscriptionSection onSubscribe={handleSubscribe} />
 
         <DealsSection
           dealsRef={dealsRef}
