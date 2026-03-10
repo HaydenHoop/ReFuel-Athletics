@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { useCommunity } from './CommunityContext';
 import { Avatar, ProBadge } from './ProAthleteModal';
@@ -19,27 +19,13 @@ const SPORT_TAGS = ['Running', 'Cycling', 'Triathlon', 'Trail', 'Ultra', 'MTB', 
 
 // ── Profanity filter ──────────────────────────────────────────────────────────
 const SWEAR_WORDS = [
-  'fuck', 'fucker', 'fucking', 'fucked', 'fucks',
-  'shit', 'shits', 'shitting', 'shitty',
-  'ass', 'asses', 'asshole', 'assholes',
-  'bitch', 'bitches', 'bitching',
-  'bastard', 'bastards',
-  'cunt', 'cunts',
-  'dick', 'dicks',
-  'cock', 'cocks',
-  'pussy', 'pussies',
-  'piss', 'pissed',
-  'damn', 'damned',
-  'crap', 'craps',
-  'hell',
-  'whore', 'whores',
-  'slut', 'sluts',
-  'nigger', 'niggers', 'nigga',
-  'faggot', 'faggots', 'fag', 'fags',
-  'retard', 'retards', 'retarded',
-  'rape', 'raping', 'raped',
+  'fuck','fucker','fucking','fucked','fucks','shit','shits','shitting','shitty',
+  'ass','asses','asshole','assholes','bitch','bitches','bitching','bastard','bastards',
+  'cunt','cunts','dick','dicks','cock','cocks','pussy','pussies','piss','pissed',
+  'damn','damned','crap','craps','hell','whore','whores','slut','sluts',
+  'nigger','niggers','nigga','faggot','faggots','fag','fags',
+  'retard','retards','retarded','rape','raping','raped',
 ];
-
 function filterProfanity(text) {
   if (!text) return text;
   let result = text;
@@ -49,8 +35,6 @@ function filterProfanity(text) {
   });
   return result;
 }
-
-
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function timeAgo(iso) {
@@ -97,12 +81,171 @@ function FormulaChips({ formula, small }) {
   );
 }
 
+// ── Fetch author profiles hook ────────────────────────────────────────────────
+function useAuthorProfiles(formulas) {
+  const [profiles, setProfiles] = useState({});
+  useEffect(() => {
+    const ids = [...new Set(formulas.filter(f => !f.anonymous && f.authorId).map(f => f.authorId))];
+    if (ids.length === 0) return;
+    supabase
+      .from('profiles')
+      .select('user_id, avatar_url, is_pro, race_results, requester_name')
+      .in('user_id', ids)
+      .then(({ data }) => {
+        if (!data) return;
+        const map = {};
+        data.forEach(p => {
+          map[p.user_id] = {
+            avatarUrl:   p.avatar_url || null,
+            isPro:       p.is_pro || false,
+            raceResults: p.race_results || [],
+            name:        p.requester_name || null,
+          };
+        });
+        setProfiles(map);
+      });
+  }, [formulas]);
+  return profiles;
+}
+
+const PAGE_SIZE = 20;
+
+// ── Pro Athlete Profile Modal ─────────────────────────────────────────────────
+function ProProfileModal({ authorId, authorName, onClose }) {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from('profiles')
+      .select('avatar_url, is_pro, race_results, requester_name')
+      .eq('user_id', authorId)
+      .maybeSingle()
+      .then(({ data }) => {
+        setProfile(data);
+        setLoading(false);
+      });
+  }, [authorId]);
+
+  const displayName = profile?.requester_name || authorName || 'Athlete';
+  const races = profile?.race_results || [];
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[85vh] overflow-y-auto">
+
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-3xl sm:rounded-t-2xl z-10">
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Pro Athlete</p>
+          <button onClick={onClose}
+            className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition text-sm">
+            ✕
+          </button>
+        </div>
+
+        <div className="px-6 py-6">
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-600 rounded-full animate-spin" />
+            </div>
+          ) : (
+            <>
+              {/* Profile header */}
+              <div className="flex items-center gap-4 mb-6">
+                <Avatar url={profile?.avatar_url} name={displayName} size="lg" />
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-xl font-extrabold text-gray-900">{displayName}</h2>
+                    <ProBadge />
+                  </div>
+                  <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Pro Athlete</p>
+                </div>
+              </div>
+
+              {/* Race results */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Race History</p>
+                {races.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6 bg-gray-50 rounded-xl">
+                    No race results added yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {races.map((r, i) => (
+                      <div key={i} className="border border-gray-100 rounded-xl px-4 py-3 hover:bg-gray-50 transition">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-bold text-gray-900 text-sm">{r.race_name || r.race}</p>
+                              {r.distance && (
+                                <span className="text-xs bg-gray-100 text-gray-500 font-semibold px-2 py-0.5 rounded-full">
+                                  {r.distance}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1 flex-wrap">
+                              {r.time && <span className="text-xs text-gray-600 font-semibold">⏱ {r.time}</span>}
+                              {r.position && <span className="text-xs text-gray-500">📍 {r.position}</span>}
+                              {(r.date || r.year) && (
+                                <span className="text-xs text-gray-400">
+                                  {r.date
+                                    ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                                    : r.year}
+                                </span>
+                              )}
+                            </div>
+                            {r.notes && <p className="text-xs text-gray-400 mt-1 italic">{r.notes}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Author Button (clickable only if PRO) ─────────────────────────────────────
+function AuthorButton({ formula, authorProfile, onViewPro }) {
+  const author = formula.anonymous ? 'Anonymous Athlete' : formula.authorName;
+  const isPro  = !formula.anonymous && authorProfile?.isPro;
+
+  if (formula.anonymous || !isPro) {
+    return (
+      <div className="flex items-center gap-2.5">
+        <Avatar url={null} name={author} size="sm" />
+        <div>
+          <p className="text-xs font-semibold text-gray-700">{author}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={e => { e.stopPropagation(); onViewPro(formula.authorId, formula.authorName); }}
+      className="flex items-center gap-2.5 group/author"
+    >
+      <Avatar url={authorProfile?.avatarUrl || null} name={author} size="sm" />
+      <div className="flex items-center gap-1.5">
+        <p className="text-xs font-semibold text-gray-700 group-hover/author:text-black transition">{author}</p>
+        <ProBadge />
+      </div>
+    </button>
+  );
+}
+
 // ── Leaderboard ───────────────────────────────────────────────────────────────
-function Leaderboard({ formulas, authorProfiles }) {
+function Leaderboard({ formulas, authorProfiles, onViewPro }) {
   const top = [...formulas]
     .sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0))
     .slice(0, 5);
-
   const medals = ['🥇', '🥈', '🥉', '4', '5'];
   const medalBg = ['bg-amber-50 border-amber-200', 'bg-gray-50 border-gray-200', 'bg-orange-50 border-orange-200', 'bg-white border-gray-100', 'bg-white border-gray-100'];
 
@@ -117,18 +260,24 @@ function Leaderboard({ formulas, authorProfiles }) {
           <p className="text-xs text-gray-400 text-center py-6">No formulas yet</p>
         ) : top.map((f, i) => {
           const profile = !f.anonymous ? authorProfiles?.[f.authorId] : null;
+          const isPro   = profile?.isPro;
           const authorDisplay = f.anonymous ? 'Anonymous' : f.authorName;
           return (
-            <div key={f.id} className={`flex items-center gap-3 px-4 py-3 ${medalBg[i]} border-b last:border-0`}>
-              <span className={`flex-shrink-0 text-base ${i < 3 ? '' : 'w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-xs font-black text-gray-500'}`}>
-                {medals[i]}
-              </span>
+            <div key={f.id} className={`flex items-center gap-3 px-4 py-3 ${medalBg[i]}`}>
+              <span className="flex-shrink-0 text-base">{medals[i]}</span>
               <Avatar url={profile?.avatarUrl || null} name={authorDisplay} size="sm" />
               <div className="flex-1 min-w-0">
                 <p className="font-extrabold text-gray-900 text-sm truncate">{filterProfanity(f.name)}</p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <p className="text-xs text-gray-400 truncate">{authorDisplay}</p>
-                  {profile?.isPro && <ProBadge />}
+                  {isPro ? (
+                    <button
+                      onClick={() => onViewPro(f.authorId, f.authorName)}
+                      className="text-xs text-gray-400 hover:text-black transition truncate flex items-center gap-1">
+                      {authorDisplay} <ProBadge />
+                    </button>
+                  ) : (
+                    <p className="text-xs text-gray-400 truncate">{authorDisplay}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
@@ -145,7 +294,7 @@ function Leaderboard({ formulas, authorProfiles }) {
 
 // ── Community Stats ───────────────────────────────────────────────────────────
 function CommunityStats({ formulas }) {
-  const totalLikes = formulas.reduce((sum, f) => sum + (f.likes?.length || 0), 0);
+  const totalLikes    = formulas.reduce((sum, f) => sum + (f.likes?.length || 0), 0);
   const totalComments = formulas.reduce((sum, f) => sum + (f.comments?.length || 0), 0);
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
@@ -153,8 +302,8 @@ function CommunityStats({ formulas }) {
       <div className="space-y-3">
         {[
           { label: 'Formulas shared', value: formulas.length },
-          { label: 'Total likes', value: totalLikes },
-          { label: 'Comments', value: totalComments },
+          { label: 'Total likes',     value: totalLikes },
+          { label: 'Comments',        value: totalComments },
         ].map(({ label, value }) => (
           <div key={label} className="flex items-center justify-between">
             <span className="text-sm text-gray-500">{label}</span>
@@ -166,13 +315,135 @@ function CommunityStats({ formulas }) {
   );
 }
 
+// ── Filter Bar ────────────────────────────────────────────────────────────────
+function FilterBar({ filters, onChange }) {
+  const [open, setOpen] = useState(false);
+
+  const activeCount = [
+    filters.proOnly,
+    filters.carbs[0] > 15 || filters.carbs[1] < 90,
+    filters.caffeine[1] < 150,
+    filters.sodium[0] > 0 || filters.sodium[1] < 600,
+  ].filter(Boolean).length;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition
+          ${activeCount > 0
+            ? 'bg-black text-white border-black'
+            : 'border-gray-200 text-gray-600 hover:border-gray-400 bg-white'}`}>
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10M11 20h2" />
+        </svg>
+        Filters
+        {activeCount > 0 && (
+          <span className="bg-white text-black rounded-full w-4 h-4 flex items-center justify-center text-xs font-black leading-none">
+            {activeCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-2 z-30 bg-white border border-gray-200 rounded-2xl shadow-xl p-5 w-72 space-y-5">
+
+          {/* PRO only toggle */}
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <p className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                PRO Athletes only
+                <span className="text-xs bg-amber-100 text-amber-700 font-black px-1.5 py-0.5 rounded-full">PRO</span>
+              </p>
+              <p className="text-xs text-gray-400">Show formulas from verified pros</p>
+            </div>
+            <div
+              onClick={() => onChange({ ...filters, proOnly: !filters.proOnly })}
+              className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 cursor-pointer
+                ${filters.proOnly ? 'bg-black' : 'bg-gray-200'}`}>
+              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform
+                ${filters.proOnly ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </div>
+          </label>
+
+          <div className="h-px bg-gray-100" />
+
+          {/* Carbs range */}
+          <div>
+            <div className="flex justify-between mb-2">
+              <p className="text-xs font-bold text-gray-700">Carbs</p>
+              <p className="text-xs text-gray-500 font-semibold">{filters.carbs[0]}g – {filters.carbs[1]}g</p>
+            </div>
+            <div className="space-y-2">
+              <input type="range" min={15} max={90} step={5}
+                value={filters.carbs[0]}
+                onChange={e => onChange({ ...filters, carbs: [Number(e.target.value), filters.carbs[1]] })}
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black" />
+              <input type="range" min={15} max={90} step={5}
+                value={filters.carbs[1]}
+                onChange={e => onChange({ ...filters, carbs: [filters.carbs[0], Number(e.target.value)] })}
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black" />
+            </div>
+            <div className="flex justify-between text-xs text-gray-300 mt-0.5"><span>15g</span><span>90g</span></div>
+          </div>
+
+          {/* Caffeine range */}
+          <div>
+            <div className="flex justify-between mb-2">
+              <p className="text-xs font-bold text-gray-700">Caffeine</p>
+              <p className="text-xs text-gray-500 font-semibold">{filters.caffeine[0]}mg – {filters.caffeine[1]}mg</p>
+            </div>
+            <div className="space-y-2">
+              <input type="range" min={0} max={150} step={25}
+                value={filters.caffeine[0]}
+                onChange={e => onChange({ ...filters, caffeine: [Number(e.target.value), filters.caffeine[1]] })}
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black" />
+              <input type="range" min={0} max={150} step={25}
+                value={filters.caffeine[1]}
+                onChange={e => onChange({ ...filters, caffeine: [filters.caffeine[0], Number(e.target.value)] })}
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black" />
+            </div>
+            <div className="flex justify-between text-xs text-gray-300 mt-0.5"><span>0mg</span><span>150mg</span></div>
+          </div>
+
+          {/* Sodium/electrolytes range */}
+          <div>
+            <div className="flex justify-between mb-2">
+              <p className="text-xs font-bold text-gray-700">Sodium</p>
+              <p className="text-xs text-gray-500 font-semibold">{filters.sodium[0]}mg – {filters.sodium[1]}mg</p>
+            </div>
+            <div className="space-y-2">
+              <input type="range" min={0} max={600} step={25}
+                value={filters.sodium[0]}
+                onChange={e => onChange({ ...filters, sodium: [Number(e.target.value), filters.sodium[1]] })}
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black" />
+              <input type="range" min={0} max={600} step={25}
+                value={filters.sodium[1]}
+                onChange={e => onChange({ ...filters, sodium: [filters.sodium[0], Number(e.target.value)] })}
+                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black" />
+            </div>
+            <div className="flex justify-between text-xs text-gray-300 mt-0.5"><span>0mg</span><span>600mg</span></div>
+          </div>
+
+          {/* Reset */}
+          <button
+            onClick={() => { onChange({ proOnly: false, carbs: [15, 90], caffeine: [0, 150], sodium: [0, 600] }); setOpen(false); }}
+            className="w-full text-xs font-bold text-gray-400 hover:text-gray-700 transition py-1">
+            Reset filters
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Share Formula Modal ───────────────────────────────────────────────────────
 function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
-  const { user }           = useAuth();
-  const { shareFormula }   = useCommunity();
+  const { user }         = useAuth();
+  const { shareFormula } = useCommunity();
   const [name, setName]         = useState('');
   const [description, setDesc]  = useState('');
-  const [anon, setAnon]    = useState(false);
+  const [anon, setAnon]         = useState(false);
   const [tags, setTags]         = useState([]);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
@@ -331,7 +602,7 @@ function ShareModal({ isOpen, onClose, onShared, preloadFormula }) {
 }
 
 // ── Formula Detail Modal ──────────────────────────────────────────────────────
-function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
+function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser, onViewPro }) {
   const { getFormula, toggleLike, addComment, deleteComment, deleteFormula } = useCommunity();
   const [formula, setFormula]             = useState(null);
   const [authorProfile, setAuthorProfile] = useState(null);
@@ -343,16 +614,20 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
 
   useEffect(() => { getFormula(formulaId).then(setFormula); }, [formulaId]);
 
-  // Fetch author profile once formula loads
   useEffect(() => {
     if (!formula || formula.anonymous || !formula.authorId) return;
     supabase
       .from('profiles')
-      .select('avatar_url, is_pro')
+      .select('avatar_url, is_pro, race_results, requester_name')
       .eq('user_id', formula.authorId)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) setAuthorProfile({ avatarUrl: data.avatar_url || null, isPro: data.is_pro || false });
+        if (data) setAuthorProfile({
+          avatarUrl:   data.avatar_url || null,
+          isPro:       data.is_pro || false,
+          raceResults: data.race_results || [],
+          name:        data.requester_name || null,
+        });
       });
   }, [formula?.authorId, formula?.anonymous]);
 
@@ -365,6 +640,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   const liked   = currentUser && formula.likes?.includes(currentUser.id);
   const isOwner = currentUser && formula.authorId === currentUser.id;
   const author  = formula.anonymous ? 'Anonymous Athlete' : formula.authorName;
+  const isPro   = !formula.anonymous && authorProfile?.isPro;
 
   const handleLike = async () => {
     if (!currentUser) return;
@@ -390,23 +666,45 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
+
+        {/* Header with clickable author */}
         <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-start justify-between z-10 rounded-t-3xl sm:rounded-t-2xl">
           <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
-            <Avatar url={authorProfile?.avatarUrl || null} name={author} size="lg" />
+            {/* Avatar — clickable if PRO */}
+            {isPro ? (
+              <button onClick={() => onViewPro(formula.authorId, formula.authorName)}>
+                <Avatar url={authorProfile?.avatarUrl || null} name={author} size="lg" />
+              </button>
+            ) : (
+              <Avatar url={null} name={author} size="lg" />
+            )}
             <div className="min-w-0">
               <h2 className="text-base font-extrabold text-gray-900 truncate">{filterProfanity(formula.name)}</h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <p className="text-xs text-gray-400">by <span className="font-semibold text-gray-600">{author}</span></p>
-                {authorProfile?.isPro && <ProBadge />}
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <span className="text-xs text-gray-400">by</span>
+                {isPro ? (
+                  <button
+                    onClick={() => onViewPro(formula.authorId, formula.authorName)}
+                    className="text-xs font-semibold text-gray-700 hover:text-black transition flex items-center gap-1">
+                    {author} <ProBadge />
+                  </button>
+                ) : (
+                  <span className="text-xs font-semibold text-gray-600">{author}</span>
+                )}
                 <span className="text-xs text-gray-400">· {timeAgo(formula.sharedAt)}</span>
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition text-sm flex-shrink-0">✕</button>
+          <button onClick={onClose}
+            className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition text-sm flex-shrink-0">
+            ✕
+          </button>
         </div>
 
         <div className="px-6 py-5 space-y-5">
-          {formula.description && <p className="text-sm text-gray-600 leading-relaxed">{filterProfanity(formula.description)}</p>}
+          {formula.description && (
+            <p className="text-sm text-gray-600 leading-relaxed">{filterProfanity(formula.description)}</p>
+          )}
 
           {formula.tags?.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
@@ -424,6 +722,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
             <FormulaChips formula={formula} />
           </div>
 
+          {/* Action buttons */}
           <div className="grid grid-cols-4 gap-2">
             <button onClick={handleLike}
               className={`flex flex-col items-center gap-1 py-3 rounded-xl border transition font-semibold text-sm
@@ -445,7 +744,8 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
               </svg>
               <span className="text-xs">Compare</span>
             </button>
-            <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}?formula=${formulaId}`); setCopied(true); setTimeout(() => setCopied(false), 2500); }}
+            <button
+              onClick={() => { navigator.clipboard.writeText(`${window.location.origin}?formula=${formulaId}`); setCopied(true); setTimeout(() => setCopied(false), 2500); }}
               className={`flex flex-col items-center gap-1 py-3 rounded-xl border transition font-semibold text-sm
                 ${copied ? 'bg-green-50 border-green-200 text-green-600' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
               <span className="text-lg">{copied ? '✓' : '🔗'}</span>
@@ -454,11 +754,7 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
           </div>
 
           {comparing && (
-            <FormulaCompare
-              formulaA={formula}
-              titleA={formula.name}
-              onClose={() => setComparing(false)}
-            />
+            <FormulaCompare formulaA={formula} titleA={formula.name} onClose={() => setComparing(false)} />
           )}
 
           {isOwner && (
@@ -467,8 +763,11 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
             </button>
           )}
 
+          {/* Comments */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Comments ({formula.comments?.length || 0})</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+              Comments ({formula.comments?.length || 0})
+            </p>
             {formula.comments?.length === 0 && (
               <p className="text-sm text-gray-400 text-center py-4">No comments yet — be the first.</p>
             )}
@@ -484,8 +783,11 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
                     <p className="text-sm text-gray-700 leading-relaxed">{filterProfanity(c.text)}</p>
                   </div>
                   {currentUser?.id === c.authorId && (
-                    <button onClick={() => deleteComment(currentUser, formulaId, c.id).then(() => getFormula(formulaId).then(setFormula))}
-                      className="text-gray-300 hover:text-red-400 transition text-xs opacity-0 group-hover:opacity-100">✕</button>
+                    <button
+                      onClick={() => deleteComment(currentUser, formulaId, c.id).then(() => getFormula(formulaId).then(setFormula))}
+                      className="text-gray-300 hover:text-red-400 transition text-xs opacity-0 group-hover:opacity-100">
+                      ✕
+                    </button>
                   )}
                 </div>
               ))}
@@ -511,42 +813,38 @@ function FormulaDetail({ formulaId, onClose, onLoadFormula, currentUser }) {
   );
 }
 
-// ── Formula Card (feed item) ──────────────────────────────────────────────────
-function FormulaCard({ formula, onOpen, currentUser, onLike, authorProfile }) {
+// ── Formula Card ──────────────────────────────────────────────────────────────
+function FormulaCard({ formula, onOpen, currentUser, onLike, authorProfile, onViewPro }) {
   const liked  = currentUser && formula.likes?.includes(currentUser.id);
-  const author = formula.anonymous ? 'Anonymous Athlete' : formula.authorName;
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden group">
       <button onClick={() => onOpen(formula.id)} className="w-full text-left p-5 pb-4">
         {/* Author row */}
-        <div className="flex items-center gap-2.5 mb-3">
-          <Avatar url={authorProfile?.avatarUrl || null} name={author} size="sm" />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 leading-none">
-              <p className="text-xs font-semibold text-gray-700">{author}</p>
-              {authorProfile?.isPro && <ProBadge />}
-            </div>
-            <p className="text-xs text-gray-400 mt-0.5">{timeAgo(formula.sharedAt)}</p>
+        <div className="flex items-center gap-2.5 mb-3" onClick={e => e.stopPropagation()}>
+          <AuthorButton formula={formula} authorProfile={authorProfile} onViewPro={onViewPro} />
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-gray-400">{timeAgo(formula.sharedAt)}</span>
+            {formula.tags?.length > 0 && (
+              <span className="bg-gray-100 text-gray-500 text-xs font-semibold px-2.5 py-1 rounded-full">
+                {formula.tags[0]}
+              </span>
+            )}
           </div>
-          {formula.tags?.length > 0 && (
-            <span className="flex-shrink-0 bg-gray-100 text-gray-500 text-xs font-semibold px-2.5 py-1 rounded-full">
-              {formula.tags[0]}
-            </span>
-          )}
         </div>
 
-        {/* Gel name — the headline */}
+        {/* Formula name */}
         <div className="flex items-center gap-2 mb-2">
           <FlavorDot flavor={formula.flavor} />
           <h3 className="font-extrabold text-gray-900 text-base">{filterProfanity(formula.name)}</h3>
         </div>
 
         {formula.description && (
-          <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed pl-4">{filterProfanity(formula.description)}</p>
+          <p className="text-sm text-gray-500 mb-3 line-clamp-2 leading-relaxed pl-4">
+            {filterProfanity(formula.description)}
+          </p>
         )}
 
-        {/* Formula chips */}
         <div className="bg-gray-950 rounded-xl p-3">
           <FormulaChips formula={formula} small />
         </div>
@@ -578,38 +876,9 @@ function FormulaCard({ formula, onOpen, currentUser, onLike, authorProfile }) {
   );
 }
 
-// Fetches avatar_url + is_pro for a set of user_ids in one query
-function useAuthorProfiles(formulas) {
-  const [profiles, setProfiles] = useState({}); // { [userId]: { avatarUrl, isPro } }
-
-  useEffect(() => {
-    const ids = [...new Set(
-      formulas
-        .filter(f => !f.anonymous && f.authorId)
-        .map(f => f.authorId)
-    )];
-    if (ids.length === 0) return;
-
-    supabase
-      .from('profiles')
-      .select('user_id, avatar_url, is_pro')
-      .in('user_id', ids)
-      .then(({ data }) => {
-        if (!data) return;
-        const map = {};
-        data.forEach(p => {
-          map[p.user_id] = { avatarUrl: p.avatar_url || null, isPro: p.is_pro || false };
-        });
-        setProfiles(map);
-      });
-  }, [formulas]);
-
-  return profiles;
-}
-
-const PAGE_SIZE = 20;
-
 // ── Main CommunityPage ────────────────────────────────────────────────────────
+const DEFAULT_FILTERS = { proOnly: false, carbs: [15, 90], caffeine: [0, 150], sodium: [0, 600] };
+
 export default function CommunityPage({ onLoadFormula, onSignIn }) {
   const { user }                        = useAuth();
   const { getFormulas, toggleLike }     = useCommunity();
@@ -617,8 +886,10 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
   const [shareOpen, setShareOpen]       = useState(false);
   const [detailId, setDetailId]         = useState(null);
   const [sharedId, setSharedId]         = useState(null);
+  const [proProfileId, setProProfileId] = useState(null);   // { id, name }
   const [search, setSearch]             = useState('');
   const [filterTag, setFilterTag]       = useState('All');
+  const [advFilters, setAdvFilters]     = useState(DEFAULT_FILTERS);
   const [feedLoading, setFeedLoading]   = useState(true);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef                     = useRef(null);
@@ -631,32 +902,27 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
   };
   useEffect(() => { refresh(); }, []);
 
-  // Allow external callers (e.g. AccountPage "View →") to open a detail
   useEffect(() => {
     window.__openCommunityFormula = (id) => setDetailId(id);
     return () => { delete window.__openCommunityFormula; };
   }, []);
 
-  // ── Infinite scroll via IntersectionObserver ──────────────────────────────
+  // Infinite scroll
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        setVisibleCount(prev => prev + PAGE_SIZE);
-      }
+      if (entries[0].isIntersecting) setVisibleCount(prev => prev + PAGE_SIZE);
     }, { threshold: 0.1 });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [feedLoading]); // re-attach after loading completes
+  }, [feedLoading]);
 
-  // Reset visible count when search/filter changes
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, filterTag]);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, filterTag, advFilters]);
 
-  // Like immediately + open the detail modal so user sees the effect
   const handleLike = async (id) => {
     if (!user) { onSignIn?.(); return; }
-    toggleLike(user, id); // fire-and-forget — detail modal will show updated state
+    toggleLike(user, id);
     setDetailId(id);
   };
 
@@ -666,13 +932,23 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
     setTimeout(() => setSharedId(null), 4000);
   };
 
+  const handleViewPro = (authorId, authorName) => {
+    setProProfileId({ id: authorId, name: authorName });
+  };
+
+  // Filter logic
   const filtered = formulas.filter(f => {
-    const matchTag    = filterTag === 'All' || f.tags?.includes(filterTag);
+    const profile   = !f.anonymous ? authorProfiles[f.authorId] : null;
+    const matchTag  = filterTag === 'All' || f.tags?.includes(filterTag);
     const matchSearch = !search.trim() ||
       f.name.toLowerCase().includes(search.toLowerCase()) ||
       f.description?.toLowerCase().includes(search.toLowerCase()) ||
       f.authorName?.toLowerCase().includes(search.toLowerCase());
-    return matchTag && matchSearch;
+    const matchPro    = !advFilters.proOnly || profile?.isPro;
+    const matchCarbs  = f.carbs >= advFilters.carbs[0] && f.carbs <= advFilters.carbs[1];
+    const matchCaff   = (f.caffeine || 0) >= advFilters.caffeine[0] && (f.caffeine || 0) <= advFilters.caffeine[1];
+    const matchSodium = (f.sodium || 0) >= advFilters.sodium[0] && (f.sodium || 0) <= advFilters.sodium[1];
+    return matchTag && matchSearch && matchPro && matchCarbs && matchCaff && matchSodium;
   });
 
   const visible = filtered.slice(0, visibleCount);
@@ -681,7 +957,7 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
   return (
     <div className="w-full max-w-5xl mx-auto">
 
-      {/* Page header */}
+      {/* Header */}
       <div className="mb-8 text-center">
         <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Community</p>
         <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">Formula Feed</h1>
@@ -690,7 +966,7 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
         </p>
       </div>
 
-      {/* Share prompt */}
+      {/* Share CTA */}
       <div className="rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 border border-gray-200"
         style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}>
         <div>
@@ -717,16 +993,20 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
         </div>
       )}
 
-      {/* Two-column layout: feed + sidebar */}
+      {/* Two-column layout */}
       <div className="flex flex-col lg:flex-row gap-6">
 
         {/* Feed column */}
         <div className="flex-1 min-w-0">
-          {/* Search + filter */}
+
+          {/* Search + sport tags + filter button */}
           <div className="mb-5 space-y-3">
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search formulas or athletes..."
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-black transition bg-white" />
+            <div className="flex gap-2">
+              <input value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Search formulas or athletes..."
+                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-black transition bg-white" />
+              <FilterBar filters={advFilters} onChange={setAdvFilters} />
+            </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {['All', ...SPORT_TAGS].map(tag => (
                 <button key={tag} onClick={() => setFilterTag(tag)}
@@ -760,7 +1040,7 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
                 {formulas.length === 0 ? 'No formulas shared yet' : 'No results found'}
               </p>
               <p className="text-sm text-gray-400 mb-5">
-                {formulas.length === 0 ? 'Be the first to share your race-day formula.' : 'Try a different search or filter.'}
+                {formulas.length === 0 ? 'Be the first to share your race-day formula.' : 'Try adjusting your filters.'}
               </p>
               {formulas.length === 0 && user && (
                 <button onClick={() => setShareOpen(true)}
@@ -773,11 +1053,17 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
             <>
               <div className="space-y-4">
                 {visible.map(f => (
-                  <FormulaCard key={f.id} formula={f} onOpen={setDetailId} currentUser={user} onLike={handleLike}
-                    authorProfile={!f.anonymous ? authorProfiles[f.authorId] : null} />
+                  <FormulaCard
+                    key={f.id}
+                    formula={f}
+                    onOpen={setDetailId}
+                    currentUser={user}
+                    onLike={handleLike}
+                    authorProfile={!f.anonymous ? authorProfiles[f.authorId] : null}
+                    onViewPro={handleViewPro}
+                  />
                 ))}
               </div>
-              {/* Infinite scroll sentinel */}
               <div ref={sentinelRef} className="py-4 flex justify-center">
                 {hasMore ? (
                   <div className="flex items-center gap-2 text-sm text-gray-400">
@@ -794,19 +1080,29 @@ export default function CommunityPage({ onLoadFormula, onSignIn }) {
 
         {/* Sidebar */}
         <div className="lg:w-72 space-y-4 flex-shrink-0">
-          <Leaderboard formulas={formulas} authorProfiles={authorProfiles} />
+          <Leaderboard formulas={formulas} authorProfiles={authorProfiles} onViewPro={handleViewPro} />
           <CommunityStats formulas={formulas} />
         </div>
       </div>
 
       {/* Modals */}
       <ShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} onShared={handleShared} />
+
       {detailId && (
         <FormulaDetail
           formulaId={detailId}
           onClose={() => { setDetailId(null); refresh(); }}
           onLoadFormula={f => onLoadFormula?.(f)}
           currentUser={user}
+          onViewPro={handleViewPro}
+        />
+      )}
+
+      {proProfileId && (
+        <ProProfileModal
+          authorId={proProfileId.id}
+          authorName={proProfileId.name}
+          onClose={() => setProProfileId(null)}
         />
       )}
     </div>
