@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ProductDetailPage from '../components/ProductDetailPage';
 import HomePage from '../components/HomePage';
 import Quiz from '../components/Quiz';
@@ -120,6 +120,9 @@ function PageContent() {
     return <BannedWall banReason={user.banReason} banExpires={user.banExpires} />;
   }
 
+
+  // Scroll to top on initial page load
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
 
   const [activeTab, setActiveTab]       = useState('home');
   const [activeProduct, setActiveProduct] = useState(null);
