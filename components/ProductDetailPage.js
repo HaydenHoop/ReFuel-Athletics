@@ -29,7 +29,7 @@ const PRODUCT_DATA = {
       { label: 'Care',     value: 'Dishwasher safe, top rack' },
     ],
     testimonials: [
-      { quote: 'Its easy to clean, easy to use!', name: 'Sasha Kelly', role: 'CSM Track & XC Athlete' },
+      { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Marathon Runner' },
       { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Triathlete' },
       { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Trail Runner' },
     ],
