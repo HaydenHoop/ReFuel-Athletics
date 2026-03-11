@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 const SYSTEM_PROMPT = `You are Remy, the friendly and knowledgeable customer support assistant for ReFuel Athletics — a sports nutrition brand that makes custom endurance gel powders and accessories.
 
@@ -144,32 +144,55 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Invalid messages format' }, { status: 400 });
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error('ANTHROPIC_API_KEY is not set');
+      console.error('GEMINI_API_KEY is not set');
       return Response.json({ error: 'API key not configured' }, { status: 500 });
     }
 
-    // Init client inside handler so env vars are definitely available
-    const client = new Anthropic({ apiKey });
-
-    // Filter to only user/assistant roles
-    const filtered = messages
-      .filter((m: { role: string; content: string }) => m.role === 'user' || m.role === 'assistant')
-      .filter((m: { role: string; content: string }) => m.content?.trim());
+    // Filter to user/assistant only
+    const filtered = messages.filter(
+      (m: { role: string; content: string }) =>
+        (m.role === 'user' || m.role === 'assistant') && m.content?.trim()
+    );
 
     if (filtered.length === 0) {
       return Response.json({ error: 'No valid messages' }, { status: 400 });
     }
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 600,
-      system: SYSTEM_PROMPT,
-      messages: filtered,
+    // Gemini uses 'model' instead of 'assistant' for role
+    const contents = filtered.map((m: { role: string; content: string }) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
+
+    const body = {
+      system_instruction: {
+        parts: [{ text: SYSTEM_PROMPT }],
+      },
+      contents,
+      generationConfig: {
+        maxOutputTokens: 600,
+        temperature: 0.7,
+      },
+    };
+
+    const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
 
-    return Response.json(response);
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('Gemini API error:', data);
+      return Response.json({ error: data?.error?.message ?? 'Gemini API error' }, { status: 500 });
+    }
+
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "Sorry, I couldn't get a response.";
+    return Response.json({ content: [{ text }] });
+
   } catch (err: unknown) {
     console.error('Chat API error:', err);
     const message = err instanceof Error ? err.message : 'Internal server error';
