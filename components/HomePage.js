@@ -2,23 +2,21 @@
 import { useState, useEffect, useRef } from 'react';
 
 // ─── Slideshow config ─────────────────────────────────────────────────────────
-// Set src: '/images/your-photo.jpg' when you have real images.
-// Until then, rich gradient placeholders are shown with a label overlay.
 const SLIDES = [
   {
-    src:   '/images/beach.jpg',   
+    src:   '/images/beach.jpg',
     label: 'Coast',
     hint:  'Coastal / beach running scene',
     gradient: 'linear-gradient(160deg, #0a2540 0%, #1a5276 40%, #0d1b2a 100%)',
   },
   {
-    src:   '/images/forest.jpg',  
+    src:   '/images/forest.jpg',
     label: 'Trail',
     hint:  'Forest trail running scene',
     gradient: 'linear-gradient(160deg, #0b2010 0%, #1e5c2a 40%, #061209 100%)',
   },
   {
-    src:   '/images/mountain.jpeg',   
+    src:   '/images/mountain.jpeg',
     label: 'Summit',
     hint:  'Mountain / alpine racing scene',
     gradient: 'linear-gradient(160deg, #12121e 0%, #2c3e6b 40%, #0a0a14 100%)',
@@ -57,10 +55,7 @@ export default function HomePage({ onTabChange }) {
   const startTimer = () => {
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      setCurrent(c => {
-        const next = (c + 1) % SLIDES.length;
-        return next;
-      });
+      setCurrent(c => (c + 1) % SLIDES.length);
     }, 5000);
   };
 
@@ -85,7 +80,6 @@ export default function HomePage({ onTabChange }) {
               onError={(e) => { e.target.style.display = 'none'; }}
               style={{ filter: 'brightness(0.75)' }} />
           ) : (
-            // Placeholder: rich gradient + label so you know what image goes here
             <div className="w-full h-full flex items-center justify-center"
               style={{ background: slide.gradient }}>
               <div className="border border-white/10 rounded-2xl px-8 py-5 text-center">
@@ -116,7 +110,7 @@ export default function HomePage({ onTabChange }) {
           ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
 
           <p className="text-xs font-bold uppercase tracking-[0.35em] text-white/40 mb-8">
-            Reduce - Reuse - ReFuel
+            By Athletes, For Athletes
           </p>
 
           <h1 className="text-white font-black leading-none tracking-tight mb-8 select-none"
@@ -133,7 +127,7 @@ export default function HomePage({ onTabChange }) {
             carbs, electrolytes, caffeine, flavor — then we ship it.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8 sm:mb-16">
             <button onClick={() => onTabChange('quiz')}
               className="group flex items-center gap-2 bg-white text-black px-8 py-4 rounded-full font-bold text-sm tracking-wide hover:bg-gray-100 transition-all hover:gap-3">
               Find Your Formula
@@ -158,17 +152,15 @@ export default function HomePage({ onTabChange }) {
           </div>
         </div>
 
-
-
         {/* Scroll cue */}
-        <div className="absolute bottom-8 right-8 flex flex-col items-center gap-1.5 text-white/20 hidden sm:flex">
+        <div className="absolute bottom-8 right-8 flex-col items-center gap-1.5 text-white/20 hidden sm:flex">
           <span className="text-xs uppercase tracking-widest" style={{ writingMode: 'vertical-rl' }}>Scroll</span>
           <div className="w-px h-10 bg-gradient-to-b from-white/20 to-transparent" />
         </div>
       </section>
 
       {/* ── How it works ─────────────────────────────────────────────────── */}
-      <section className="bg-white py-24 px-6">
+      <section className="bg-white py-12 sm:py-24 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-gray-400 mb-3">The Process</p>
@@ -176,9 +168,9 @@ export default function HomePage({ onTabChange }) {
           </div>
           <div className="grid md:grid-cols-3 gap-10">
             {[
-              { step: '01', title: 'Take the Quiz',       body: 'Answer 7 questions about your race distance, sweat rate, and caffeine tolerance. We crunch the sports science.' },
-              { step: '02', title: 'Dial Your Formula',   body: 'Fine-tune every slider — carbs, sodium, potassium, caffeine, consistency. Preview your price in real time.' },
-              { step: '03', title: 'We Mix & Ship',       body: 'Your formula is mixed fresh to order and shipped within 24 hours. Every pouch labeled with your exact breakdown.' },
+              { step: '01', title: 'Take the Quiz',     body: 'Answer 7 questions about your race distance, sweat rate, and caffeine tolerance. We crunch the sports science.' },
+              { step: '02', title: 'Dial Your Formula', body: 'Fine-tune every slider — carbs, sodium, potassium, caffeine, consistency. Preview your price in real time.' },
+              { step: '03', title: 'We Mix & Ship',     body: 'Your formula is mixed fresh to order and shipped within 24 hours. Every pouch labeled with your exact breakdown.' },
             ].map(item => (
               <div key={item.step}>
                 <p className="text-8xl font-black text-gray-300 leading-none mb-4 select-none">{item.step}</p>
