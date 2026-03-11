@@ -11,13 +11,13 @@ export async function POST(req: Request) {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
       },
     });
 
     await transporter.sendMail({
-      from: `"ReFuel Contact Form" <${process.env.EMAIL_USER}>`,
+      from: `"ReFuel Contact Form" <${process.env.GMAIL_USER}>`,
       to: 'haydenh.refuel@gmail.com',
       subject: `[Contact Form] ${subject}`,
       html: `
