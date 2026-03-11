@@ -1,4 +1,4 @@
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
 
 const SYSTEM_PROMPT = `You are Remy, the friendly and knowledgeable customer support assistant for ReFuel Athletics — a sports nutrition brand that makes custom endurance gel powders and accessories.
 
@@ -160,16 +160,17 @@ export async function POST(req: Request) {
       return Response.json({ error: 'No valid messages' }, { status: 400 });
     }
 
-    // Gemini uses 'model' instead of 'assistant' for role
-    const contents = filtered.map((m: { role: string; content: string }) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
+    // v1 doesn't support system_instruction — prepend system prompt as first turn
+    const contents = [
+      { role: 'user',  parts: [{ text: `[SYSTEM INSTRUCTIONS — follow these for the entire conversation]\n\n${SYSTEM_PROMPT}` }] },
+      { role: 'model', parts: [{ text: 'Understood! I\'m Remy, ReFuel\'s support assistant. Ready to help.' }] },
+      ...filtered.map((m: { role: string; content: string }) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      })),
+    ];
 
     const body = {
-      system_instruction: {
-        parts: [{ text: SYSTEM_PROMPT }],
-      },
       contents,
       generationConfig: {
         maxOutputTokens: 600,
