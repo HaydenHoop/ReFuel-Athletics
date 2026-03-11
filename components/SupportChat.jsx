@@ -96,18 +96,18 @@ export default function SupportChat() {
       {/* ── Floating button ─────────────────────────────────────────────── */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-[60] w-14 h-14 rounded-full shadow-2xl overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-6 z-[60] w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95"
+        style={{ background: 'linear-gradient(135deg, #1a2535 0%, #2e4460 100%)' }}
         aria-label="Open support chat"
       >
         {open ? (
-          <div className="w-full h-full flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #1a2535 0%, #2e4460 100%)' }}>
-            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </div>
+          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
         ) : (
-          <img src="/remyPFP.png" alt="Open chat" className="w-full h-full object-cover" />
+          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+          </svg>
         )}
 
         {hasUnread && !open && (
