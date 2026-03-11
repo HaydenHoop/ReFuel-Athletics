@@ -17,6 +17,7 @@ import AuthModal from '../components/AuthModal';
 import { CartProvider } from '../components/CartContext';
 import { AuthProvider, useAuth } from '../components/AuthContext';
 import { CommunityProvider } from '../components/CommunityContext';
+import SupportChat from '../components/SupportChat';
 
 // ── Quiz landing choice screen ────────────────────────────────────────────────
 function QuizLanding({ onChoose }) {
@@ -204,6 +205,7 @@ function PageContent() {
       <CartDrawer onCheckout={() => setCheckoutOpen(true)} onViewDeals={handleViewDeals} />
       <CheckoutModal isOpen={checkoutOpen} onClose={() => setCheckoutOpen(false)} onViewAccount={() => setActiveTab('account')} />
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} defaultMode={authMode} />
+      <SupportChat />
 
       <main>
 
