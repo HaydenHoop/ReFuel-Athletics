@@ -216,7 +216,7 @@ function PageContent() {
 
         {/* All other tabs — pt-[100px] clears fixed nav */}
         {activeTab !== 'home' && (
-          <div className="flex flex-col items-center px-4 py-12 pt-[100px]">
+          <div className="flex flex-col items-center px-4 py-12 pt-[88px] sm:pt-[100px]">
 
             {/* Shop — dealsRef passed so CartDrawer can scroll to deals */}
             {activeTab === 'products' && (

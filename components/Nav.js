@@ -23,6 +23,7 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
   const [mobileMenuOpen, setMobileMenuOpen]   = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
   const [scrolled, setScrolled]               = useState(false);
+  const [announcementDismissed, setAnnouncementDismissed] = useState(false);
   const dropRef = useRef(null);
 
   useEffect(() => {
@@ -67,11 +68,23 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
   return (
     <>
       {/* Announcement bar */}
-      <div className="w-full fixed top-0 left-0 right-0 z-50 bg-black text-white text-xs font-medium text-center py-2 tracking-wide">
-        Free shipping on orders over $40 — use code <span className="font-bold underline underline-offset-2">FIRSTORDER</span> for 15% off
-      </div>
+      {!announcementDismissed && (
+        <div className="w-full fixed top-0 left-0 right-0 z-50 bg-black text-white text-xs font-medium text-center py-2 tracking-wide flex items-center justify-center pr-8">
+          <span>Free shipping on orders over $40 — use code <span className="font-bold underline underline-offset-2">FIRSTORDER</span> for 15% off</span>
+          <button
+            onClick={() => setAnnouncementDismissed(true)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
+            aria-label="Dismiss"
+          >
+            <svg className="w-3 h-3 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      )}
 
-      <header className={`w-full fixed top-8 left-0 right-0 z-40 transition-all duration-300 border-b
+      <header className={`w-full fixed left-0 right-0 z-40 transition-all duration-300 border-b
+        ${announcementDismissed ? 'top-0' : 'top-8'}
         ${glassy
           ? 'bg-white/10 backdrop-blur-xl border-white/20 shadow-[0_2px_20px_rgba(255,255,255,0.08)]'
           : 'bg-white/90 backdrop-blur-md border-gray-200/60 shadow-sm'
@@ -198,7 +211,7 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
       {/* ── Mobile dropdown menu ─────────────────────────────────────────── */}
       <div className={`lg:hidden fixed left-0 right-0 z-30 transition-all duration-300 ease-in-out
         ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        style={{ top: '88px' }}  /* announcement bar (32px) + header (56px) */
+        style={{ top: announcementDismissed ? '56px' : '88px' }}
       >
         <div className={`mx-3 rounded-2xl shadow-2xl overflow-hidden border transition-all duration-300
           ${mobileMenuOpen ? 'translate-y-0' : '-translate-y-2'}
