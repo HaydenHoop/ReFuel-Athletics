@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { DEV_EMAILS } from '@/lib/devConfig';
 
 export async function POST(req: Request) {
   try {
@@ -16,9 +17,12 @@ export async function POST(req: Request) {
       },
     });
 
+    // Send to main inbox + all dev emails, deduplicated
+    const recipients = [...new Set(['haydenh.refuel@gmail.com', ...DEV_EMAILS])];
+
     await transporter.sendMail({
       from: `"ReFuel Contact Form" <${process.env.GMAIL_USER}>`,
-      to: 'haydenh.refuel@gmail.com',
+      to: recipients.join(', '),
       subject: `[Contact Form] ${subject}`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; background: #f9fafb; border-radius: 14px; overflow: hidden; border: 1px solid #e5e7eb;">
