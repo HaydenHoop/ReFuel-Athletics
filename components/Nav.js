@@ -19,8 +19,10 @@ const NAV_LINKS = [
 
 export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick }) {
   const { user } = useAuth();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [dropdownOpen, setDropdownOpen]       = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen]   = useState(false);
+  const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
+  const [scrolled, setScrolled]               = useState(false);
   const dropRef = useRef(null);
 
   useEffect(() => {
@@ -28,6 +30,9 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Close mobile menu on tab change
+  useEffect(() => { setMobileMenuOpen(false); }, [activeTab]);
 
   const isHero = activeTab === 'home';
   const glassy = isHero && !scrolled;
@@ -40,8 +45,15 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // Prevent body scroll when mobile menu open
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
   const handleProductSection = (section) => {
     setDropdownOpen(false);
+    setMobileMenuOpen(false);
     onTabChange('products');
     setTimeout(() => {
       const el = document.getElementById(`product-${section}`);
@@ -132,8 +144,9 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
               })}
             </nav>
 
-            {/* Right: account + cart */}
+            {/* Right: account (desktop) + cart + hamburger (mobile) */}
             <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Desktop account button */}
               <button onClick={onAccountClick}
                 className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-all
                   ${activeTab === 'account'
@@ -156,27 +169,114 @@ export default function Nav({ activeTab, onTabChange, cartButton, onAccountClick
                 )}
                 {user && <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />}
               </button>
-              {cartButton}
-            </div>
 
+              {/* Cart button (all sizes) */}
+              {cartButton}
+
+              {/* Mobile hamburger */}
+              <button
+                onClick={() => setMobileMenuOpen(o => !o)}
+                className={`lg:hidden w-9 h-9 flex items-center justify-center rounded-lg transition-all
+                  ${glassy ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100'}`}
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Mobile dropdown menu ─────────────────────────────────────────── */}
+      <div className={`lg:hidden fixed left-0 right-0 z-30 transition-all duration-300 ease-in-out
+        ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        style={{ top: '88px' }}  /* announcement bar (32px) + header (56px) */
+      >
+        <div className={`mx-3 rounded-2xl shadow-2xl overflow-hidden border transition-all duration-300
+          ${mobileMenuOpen ? 'translate-y-0' : '-translate-y-2'}
+          bg-white/95 backdrop-blur-xl border-gray-200/60`}>
+
+          <div className="p-2">
+            {/* All nav links */}
+            {NAV_LINKS.map(link => {
+              if (link.dropdown) {
+                return (
+                  <div key={link.id}>
+                    <button
+                      onClick={() => setMobileProductsOpen(o => !o)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all
+                        ${activeTab === 'products' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                    >
+                      <span>Products</span>
+                      <svg className={`w-4 h-4 transition-transform text-gray-400 ${mobileProductsOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </button>
+                    {/* Products sub-items */}
+                    {mobileProductsOpen && (
+                      <div className="ml-4 mb-1 border-l-2 border-gray-100 pl-3 space-y-0.5">
+                        {PRODUCTS_DROPDOWN.map(item => (
+                          <button key={item.section}
+                            onClick={() => handleProductSection(item.section)}
+                            className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+                            <p className="text-sm font-semibold text-gray-800">{item.label}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{item.sub}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return (
+                <button key={link.id}
+                  onClick={() => onTabChange(link.id)}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all
+                    ${activeTab === link.id ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
+                  {link.label}
+                </button>
+              );
+            })}
+
+            {/* Divider */}
+            <div className="my-2 border-t border-gray-100" />
+
+            {/* Account */}
+            <button
+              onClick={() => { onAccountClick(); setMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all
+                ${activeTab === 'account' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover" />
+              ) : user ? (
+                <span className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs font-bold">
+                  {user.name?.[0]?.toUpperCase() || '?'}
+                </span>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              )}
+              <span>{user ? user.name.split(' ')[0] : 'Account'}</span>
+              {user?.isPro && (
+                <span className="text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-black px-1.5 py-0.5 rounded-md leading-none">PRO</span>
+              )}
+              {user && <span className="w-1.5 h-1.5 bg-green-500 rounded-full ml-auto" />}
+            </button>
           </div>
         </div>
 
-        {/* Mobile bottom strip */}
-        <nav className={`lg:hidden flex border-t ${glassy ? 'border-white/20' : 'border-gray-100'}`}>
-          {[...NAV_LINKS, { id: 'account', label: user?.isPro ? 'Pro' : 'Account', dropdown: false }].map(tab => {
-            const isActive = activeTab === tab.id;
-            const onClick = tab.id === 'account' ? onAccountClick : () => onTabChange(tab.id);
-            return (
-              <button key={tab.id} onClick={onClick}
-                className={`flex-1 py-2 text-center transition-colors ${isActive ? (glassy ? 'text-white' : 'text-black') : (glassy ? 'text-white/50' : 'text-gray-400')}`}>
-                <span className="text-xs font-semibold block leading-tight">{tab.label}</span>
-                {isActive && <div className={`w-1 h-1 rounded-full mx-auto mt-0.5 ${glassy ? 'bg-white' : 'bg-black'}`} />}
-              </button>
-            );
-          })}
-        </nav>
-      </header>
+        {/* Tap outside to close */}
+        <div className="fixed inset-0 -z-10" onClick={() => setMobileMenuOpen(false)} />
+      </div>
     </>
   );
 }
