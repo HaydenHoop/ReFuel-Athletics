@@ -1,4 +1,4 @@
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const SYSTEM_PROMPT = `You are Remy, the friendly and knowledgeable customer support assistant for ReFuel Athletics — a sports nutrition brand that makes custom endurance gel powders and accessories.
 
@@ -144,9 +144,9 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Invalid messages format' }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-      console.error('GEMINI_API_KEY is not set');
+      console.error('GROQ_API_KEY is not set');
       return Response.json({ error: 'API key not configured' }, { status: 500 });
     }
 
@@ -160,38 +160,37 @@ export async function POST(req: Request) {
       return Response.json({ error: 'No valid messages' }, { status: 400 });
     }
 
-    // v1 doesn't support system_instruction — prepend system prompt as first turn
-    const contents = [
-      { role: 'user',  parts: [{ text: `[SYSTEM INSTRUCTIONS — follow these for the entire conversation]\n\n${SYSTEM_PROMPT}` }] },
-      { role: 'model', parts: [{ text: 'Understood! I\'m Remy, ReFuel\'s support assistant. Ready to help.' }] },
+    // Groq uses OpenAI-compatible format — system prompt as first message
+    const groqMessages = [
+      { role: 'system', content: SYSTEM_PROMPT },
       ...filtered.map((m: { role: string; content: string }) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
+        role: m.role, // 'user' | 'assistant' — both work as-is
+        content: m.content,
       })),
     ];
 
-    const body = {
-      contents,
-      generationConfig: {
-        maxOutputTokens: 600,
-        temperature: 0.7,
-      },
-    };
-
-    const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const res = await fetch(GROQ_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: groqMessages,
+        max_tokens: 600,
+        temperature: 0.7,
+      }),
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      console.error('Gemini API error:', data);
-      return Response.json({ error: data?.error?.message ?? 'Gemini API error' }, { status: 500 });
+      console.error('Groq API error:', data);
+      return Response.json({ error: data?.error?.message ?? 'Groq API error' }, { status: 500 });
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "Sorry, I couldn't get a response.";
+    const text = data?.choices?.[0]?.message?.content ?? "Sorry, I couldn't get a response.";
     return Response.json({ content: [{ text }] });
 
   } catch (err: unknown) {
