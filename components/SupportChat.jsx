@@ -3,26 +3,22 @@ import { useState, useRef, useEffect } from 'react';
 
 const WELCOME_MESSAGE = {
   role: 'assistant',
-  content: "Hey! I'm Remy, ReFuel's support assistant. I can help with product questions, your formula, subscriptions, shipping, or anything else about ReFuel. What's on your mind?",
+  content: "Hey! I'm Remy, ReFuel's support assistant. Ask me anything about our products, formulas, subscriptions, or shipping — I'll keep it short and point you in the right direction!",
 };
 
 export default function SupportChat() {
-  const [open, setOpen]         = useState(false);
-  const [messages, setMessages] = useState([WELCOME_MESSAGE]);
-  const [input, setInput]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [open, setOpen]           = useState(false);
+  const [messages, setMessages]   = useState([WELCOME_MESSAGE]);
+  const [input, setInput]         = useState('');
+  const [loading, setLoading]     = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
-    if (open) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
-  // Focus input when opened
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 150);
@@ -50,7 +46,6 @@ export default function SupportChat() {
       });
       const data = await res.json();
 
-      // Surface API errors visibly during development
       if (data.error) {
         console.error('Chat API returned error:', data.error);
         setMessages(prev => [...prev, {
@@ -63,11 +58,12 @@ export default function SupportChat() {
 
       const reply = data.content?.[0]?.text ?? "Sorry, I couldn't get a response. Try again!";
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+      if (!open) setHasUnread(true);
     } catch (err) {
       console.error('SupportChat fetch error:', err);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: "Sorry, something went wrong on my end. Please try again or email us at haydenh.refuel@gmail.com",
+        content: "Something went wrong on my end. Please try again or email haydenh.refuel@gmail.com",
       }]);
     }
     setLoading(false);
@@ -79,7 +75,6 @@ export default function SupportChat() {
 
   const clearChat = () => setMessages([WELCOME_MESSAGE]);
 
-  // ── Suggested prompts shown when only the welcome message exists ──────────
   const SUGGESTIONS = [
     "What's in the Custom Gel Powder?",
     "How does the subscription work?",
@@ -87,41 +82,50 @@ export default function SupportChat() {
     "How do I use the quiz?",
   ];
 
+  const RemyAvatar = ({ size = 'sm' }) => (
+    <img
+      src="/remyPFP.png"
+      alt="Remy"
+      className={`rounded-full object-cover flex-shrink-0 ${size === 'lg' ? 'w-9 h-9' : 'w-6 h-6'}`}
+      style={{ minWidth: size === 'lg' ? '2.25rem' : '1.5rem' }}
+    />
+  );
+
   return (
     <>
       {/* ── Floating button ─────────────────────────────────────────────── */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-[60] w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95"
-        style={{ background: 'linear-gradient(135deg, #1a2535 0%, #2e4460 100%)' }}
+        className="fixed bottom-6 right-6 z-[60] w-14 h-14 rounded-full shadow-2xl overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95"
         aria-label="Open support chat"
       >
         {open ? (
-          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
+          <div className="w-full h-full flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #1a2535 0%, #2e4460 100%)' }}>
+            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </div>
         ) : (
-          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-          </svg>
+          <img src="/remyPFP.png" alt="Open chat" className="w-full h-full object-cover" />
         )}
 
-        {/* Unread dot */}
         {hasUnread && !open && (
-          <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white" />
+          <span className="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white" />
         )}
       </button>
 
       {/* ── Chat panel ──────────────────────────────────────────────────── */}
-      <div className={`fixed bottom-24 right-6 z-[60] w-[370px] max-w-[calc(100vw-2rem)] flex flex-col rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 origin-bottom-right
-        ${open ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}`}
-        style={{ height: '520px', background: '#fff' }}>
-
+      <div
+        className={`fixed bottom-24 right-6 z-[60] w-[370px] max-w-[calc(100vw-2rem)] flex flex-col rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 origin-bottom-right
+          ${open ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}`}
+        style={{ height: '520px', background: '#fff' }}
+      >
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3.5 flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, #1a2535 0%, #2e4460 100%)' }}>
-          <div className="w-9 h-9 rounded-full bg-white/15 border border-white/25 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-black text-sm">RF</span>
+          <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 border border-white/20">
+            <RemyAvatar size="lg" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-sm leading-tight">Remy</p>
@@ -147,18 +151,17 @@ export default function SupportChat() {
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
-                <div className="w-6 h-6 rounded-full flex-shrink-0 mr-2 mt-0.5 flex items-center justify-center text-white text-xs font-black"
-                  style={{ background: 'linear-gradient(135deg, #1a2535, #2e4460)', minWidth: '1.5rem' }}>
-                  R
+                <div className="mr-2 mt-0.5 rounded-full overflow-hidden border border-gray-200 flex-shrink-0"
+                  style={{ width: '1.5rem', height: '1.5rem', minWidth: '1.5rem' }}>
+                  <img src="/remyPFP.png" alt="Remy" className="w-full h-full object-cover" />
                 </div>
               )}
               <div className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed
                 ${msg.role === 'user'
                   ? 'bg-gray-900 text-white rounded-tr-sm'
                   : 'bg-white text-gray-800 rounded-tl-sm shadow-sm border border-gray-100'}`}>
-                {/* Render newlines as line breaks */}
-                {msg.content.split('\n').map((line, li) => (
-                  <span key={li}>{line}{li < msg.content.split('\n').length - 1 && <br />}</span>
+                {msg.content.split('\n').map((line, li, arr) => (
+                  <span key={li}>{line}{li < arr.length - 1 && <br />}</span>
                 ))}
               </div>
             </div>
@@ -167,9 +170,9 @@ export default function SupportChat() {
           {/* Typing indicator */}
           {loading && (
             <div className="flex justify-start">
-              <div className="w-6 h-6 rounded-full flex-shrink-0 mr-2 flex items-center justify-center text-white text-xs font-black"
-                style={{ background: 'linear-gradient(135deg, #1a2535, #2e4460)', minWidth: '1.5rem' }}>
-                R
+              <div className="mr-2 rounded-full overflow-hidden border border-gray-200 flex-shrink-0"
+                style={{ width: '1.5rem', height: '1.5rem', minWidth: '1.5rem' }}>
+                <img src="/remyPFP.png" alt="Remy" className="w-full h-full object-cover" />
               </div>
               <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
                 <div className="flex gap-1 items-center h-4">
@@ -181,7 +184,7 @@ export default function SupportChat() {
             </div>
           )}
 
-          {/* Suggested prompts — only shown at start */}
+          {/* Suggested prompts — only at start */}
           {messages.length === 1 && !loading && (
             <div className="pt-1 space-y-1.5">
               {SUGGESTIONS.map((s, i) => (
