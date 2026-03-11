@@ -129,7 +129,7 @@ export default function SupportChat() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-sm leading-tight">Remy</p>
-            <p className="text-white/60 text-xs">ReFuel Support · Usually instant</p>
+            <p className="text-white/60 text-xs">ReFuel Support</p>
           </div>
           <button onClick={clearChat}
             className="text-white/40 hover:text-white/70 transition p-1 rounded-lg hover:bg-white/10"
