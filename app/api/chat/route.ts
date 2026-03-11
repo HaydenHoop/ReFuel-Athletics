@@ -1,4 +1,4 @@
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent';
 
 const SYSTEM_PROMPT = `You are Remy, the friendly and knowledgeable customer support assistant for ReFuel Athletics — a sports nutrition brand that makes custom endurance gel powders and accessories.
 
