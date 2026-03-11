@@ -1,7 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic();
-
 const SYSTEM_PROMPT = `You are Remy, the friendly and knowledgeable customer support assistant for ReFuel Athletics — a sports nutrition brand that makes custom endurance gel powders and accessories.
 
 Your personality:
@@ -146,13 +144,26 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Invalid messages format' }, { status: 400 });
     }
 
-    // Filter to only user/assistant roles, ensure alternating, skip system messages
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('ANTHROPIC_API_KEY is not set');
+      return Response.json({ error: 'API key not configured' }, { status: 500 });
+    }
+
+    // Init client inside handler so env vars are definitely available
+    const client = new Anthropic({ apiKey });
+
+    // Filter to only user/assistant roles
     const filtered = messages
       .filter((m: { role: string; content: string }) => m.role === 'user' || m.role === 'assistant')
       .filter((m: { role: string; content: string }) => m.content?.trim());
 
+    if (filtered.length === 0) {
+      return Response.json({ error: 'No valid messages' }, { status: 400 });
+    }
+
     const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',  // Fast + cheap for chat
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 600,
       system: SYSTEM_PROMPT,
       messages: filtered,

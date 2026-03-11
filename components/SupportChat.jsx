@@ -49,10 +49,22 @@ export default function SupportChat() {
         }),
       });
       const data = await res.json();
+
+      // Surface API errors visibly during development
+      if (data.error) {
+        console.error('Chat API returned error:', data.error);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: `Something went wrong: ${data.error}. Please try again or email haydenh.refuel@gmail.com`,
+        }]);
+        setLoading(false);
+        return;
+      }
+
       const reply = data.content?.[0]?.text ?? "Sorry, I couldn't get a response. Try again!";
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
-      if (!open) setHasUnread(true);
-    } catch {
+    } catch (err) {
+      console.error('SupportChat fetch error:', err);
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: "Sorry, something went wrong on my end. Please try again or email us at haydenh.refuel@gmail.com",
