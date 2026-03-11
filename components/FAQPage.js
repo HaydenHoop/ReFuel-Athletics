@@ -1,5 +1,252 @@
 "use client";
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+
+const CONTACT_SUBJECTS = [
+  'Shipping',
+  'Returns',
+  'Product Issue',
+  'Feedback',
+  'Ambassador Inquiry',
+  'Product Deal / Partnership',
+  'Website Issue',
+  'Order Question',
+  'Other',
+];
+
+function ContactModal({ open, onClose }) {
+  const [subject, setSubject]   = useState('');
+  const [name, setName]         = useState('');
+  const [email, setEmail]       = useState('');
+  const [message, setMessage]   = useState('');
+  const [status, setStatus]     = useState('idle'); // idle | sending | success | error
+  const [errorMsg, setErrorMsg] = useState('');
+  const overlayRef = useRef(null);
+
+  // Reset form when closed
+  useEffect(() => {
+    if (!open) {
+      setTimeout(() => {
+        setSubject(''); setName(''); setEmail('');
+        setMessage(''); setStatus('idle'); setErrorMsg('');
+      }, 300);
+    }
+  }, [open]);
+
+  // Close on overlay click
+  const handleOverlayClick = (e) => {
+    if (e.target === overlayRef.current) onClose();
+  };
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    if (open) document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
+  const handleSubmit = async () => {
+    if (!subject || !name.trim() || !email.trim() || !message.trim()) {
+      setErrorMsg('Please fill in all fields.'); return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrorMsg('Please enter a valid email address.'); return;
+    }
+    setErrorMsg('');
+    setStatus('sending');
+    try {
+      const res = await fetch('/api/email/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, name, email, message }),
+      });
+      if (!res.ok) throw new Error('Failed to send');
+      setStatus('success');
+    } catch {
+      setStatus('error');
+      setErrorMsg('Something went wrong. Please try again or email haydenh.refuel@gmail.com');
+    }
+  };
+
+  if (!open) return null;
+
+  const inputStyle = {
+    width: '100%', padding: '11px 14px',
+    border: '1px solid rgba(0,0,0,0.12)', borderRadius: '10px',
+    fontSize: '13.5px', color: '#111827', outline: 'none',
+    background: 'rgba(255,255,255,0.8)',
+    transition: 'border-color 0.15s',
+    boxSizing: 'border-box',
+    fontFamily: 'inherit',
+  };
+
+  const labelStyle = {
+    display: 'block', fontSize: '11.5px', fontWeight: 700,
+    color: '#374151', marginBottom: '6px', letterSpacing: '0.03em',
+    textTransform: 'uppercase',
+  };
+
+  return (
+    <div
+      ref={overlayRef}
+      onClick={handleOverlayClick}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'rgba(0,0,0,0.45)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '16px',
+      }}
+    >
+      <div style={{
+        width: '100%', maxWidth: '480px',
+        background: 'rgba(255,255,255,0.97)',
+        borderRadius: '22px',
+        border: '1px solid rgba(0,0,0,0.08)',
+        boxShadow: '0 24px 80px rgba(0,0,0,0.18)',
+        overflow: 'hidden',
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: '22px 24px 18px',
+          borderBottom: '1px solid rgba(0,0,0,0.07)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div>
+            <p style={{ fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(100,116,139,0.8)', margin: '0 0 4px' }}>
+              ReFuel Athletics
+            </p>
+            <h2 style={{ fontSize: '19px', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.01em' }}>
+              Contact Us
+            </h2>
+          </div>
+          <button onClick={onClose} style={{
+            width: '32px', height: '32px', borderRadius: '8px',
+            border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(0,0,0,0.04)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '22px 24px 24px' }}>
+          {status === 'success' ? (
+            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <div style={{
+                width: '52px', height: '52px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px',
+              }}>
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#111827', margin: '0 0 8px' }}>Message Sent!</h3>
+              <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 22px', lineHeight: 1.6 }}>
+                We'll get back to you at <strong>{email}</strong> as soon as possible.
+              </p>
+              <button onClick={onClose} style={{
+                background: '#111827', color: '#fff', padding: '11px 28px',
+                borderRadius: '10px', fontWeight: 700, fontSize: '13px',
+                border: 'none', cursor: 'pointer',
+              }}>
+                Close
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+              {/* Subject dropdown */}
+              <div>
+                <label style={labelStyle}>Topic</label>
+                <select
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
+                  style={{ ...inputStyle, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center', paddingRight: '36px', color: subject ? '#111827' : '#9ca3af' }}
+                >
+                  <option value="" disabled>Select a topic...</option>
+                  {CONTACT_SUBJECTS.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Name */}
+              <div>
+                <label style={labelStyle}>Name</label>
+                <input
+                  type="text" value={name} onChange={e => setName(e.target.value)}
+                  placeholder="Your full name" style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = '#111827'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.12)'}
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label style={labelStyle}>Email</label>
+                <input
+                  type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="your@email.com" style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = '#111827'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.12)'}
+                />
+              </div>
+
+              {/* Message */}
+              <div>
+                <label style={labelStyle}>Message</label>
+                <textarea
+                  value={message} onChange={e => setMessage(e.target.value)}
+                  placeholder="Tell us what's on your mind..."
+                  rows={4}
+                  style={{ ...inputStyle, resize: 'vertical', minHeight: '100px', lineHeight: 1.5 }}
+                  onFocus={e => e.target.style.borderColor = '#111827'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.12)'}
+                />
+              </div>
+
+              {/* Error */}
+              {errorMsg && (
+                <p style={{ fontSize: '12.5px', color: '#dc2626', margin: 0, fontWeight: 500 }}>
+                  {errorMsg}
+                </p>
+              )}
+
+              {/* Submit */}
+              <button
+                onClick={handleSubmit}
+                disabled={status === 'sending'}
+                style={{
+                  background: '#111827', color: '#fff',
+                  padding: '13px', borderRadius: '11px',
+                  fontWeight: 700, fontSize: '13.5px',
+                  border: 'none', cursor: status === 'sending' ? 'not-allowed' : 'pointer',
+                  opacity: status === 'sending' ? 0.7 : 1,
+                  transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                }}
+              >
+                {status === 'sending' ? (
+                  <>
+                    <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                    </svg>
+                    Sending...
+                  </>
+                ) : 'Send Message →'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const FAQS = [
   {
@@ -181,6 +428,7 @@ function FAQItem({ q, a }) {
 // ── Main FAQ Page ─────────────────────────────────────────────────────────────
 export default function FAQPage({ onGoToQuiz }) {
   const [activeCategory, setActiveCategory] = useState(FAQS[0].category);
+  const [contactOpen, setContactOpen] = useState(false);
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh' }}>
@@ -214,16 +462,19 @@ export default function FAQPage({ onGoToQuiz }) {
             lineHeight: 1.75, maxWidth: '440px', margin: '0 auto',
           }}>
             Everything you need to know about our gel formulas and reusable packet. Can't find what you're looking for?{' '}
-            <a
-              href="mailto:haydenh.refuel@gmail.com"
+            <button
+              onClick={() => setContactOpen(true)}
               style={{
                 color: '#111827', fontWeight: 600,
                 textDecoration: 'underline',
                 textDecorationColor: 'rgba(0,0,0,0.25)',
+                background: 'none', border: 'none',
+                cursor: 'pointer', fontSize: 'inherit',
+                padding: 0, fontFamily: 'inherit',
               }}
             >
-              Email us directly.
-            </a>
+              Contact us.
+            </button>
           </p>
         </div>
 
@@ -327,8 +578,30 @@ export default function FAQPage({ onGoToQuiz }) {
           >
             Take the Diagnostic →
           </button>
+          <button
+            onClick={() => setContactOpen(true)}
+            style={{
+              background: 'transparent',
+              color: '#6b7280', padding: '13px 30px',
+              borderRadius: '11px', fontWeight: 600, fontSize: '13px',
+              border: '1px solid rgba(0,0,0,0.12)',
+              cursor: 'pointer', marginTop: '10px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'rgba(0,0,0,0.25)';
+              e.currentTarget.style.color = '#111827';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)';
+              e.currentTarget.style.color = '#6b7280';
+            }}
+          >
+            Contact Us
+          </button>
         </div>
       </div>
+      <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />
     </div>
   );
 }
