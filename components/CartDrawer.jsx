@@ -151,7 +151,7 @@ export default function CartDrawer({ onCheckout, onViewDeals }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold text-gray-900">Your Cart</h2>
+            <h2 className="text-lg font-bold text-gray-900">Your Cart: DO NOT PURCHASE ANYTHING: PRODUCT STILL IN DEV</h2>
             {itemCount > 0 && (
               <span className="bg-black text-white text-xs font-bold px-2 py-0.5 rounded-full">
                 {itemCount}
