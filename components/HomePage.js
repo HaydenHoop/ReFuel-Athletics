@@ -27,7 +27,7 @@ const STATS = [
   { value: '100%',  label: 'Customizable' },
   { value: '$1.88', label: 'Per pouch' },
   { value: '5',     label: 'Flavor options' },
-  { value: '24hr',  label: 'Mixed fresh' },
+  { value: '∞',  label: 'Formulas' },
 ];
 
 export default function HomePage({ onTabChange }) {
@@ -170,7 +170,7 @@ export default function HomePage({ onTabChange }) {
             {[
               { step: '01', title: 'Take the Quiz',     body: 'Answer 7 questions about your race distance, sweat rate, and caffeine tolerance. We crunch the sports science.' },
               { step: '02', title: 'Dial Your Formula', body: 'Fine-tune every slider — carbs, sodium, potassium, caffeine, consistency. Preview your price in real time.' },
-              { step: '03', title: 'We Mix & Ship',     body: 'Your formula is mixed fresh to order and shipped within 24 hours. Every pouch labeled with your exact breakdown.' },
+              { step: '03', title: 'We Mix & Ship',     body: 'Your formula is mixed fresh to order and shipped promplty. Every pouch labeled with your exact breakdown.' },
             ].map(item => (
               <div key={item.step}>
                 <p className="text-8xl font-black text-gray-300 leading-none mb-4 select-none">{item.step}</p>
