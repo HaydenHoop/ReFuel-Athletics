@@ -551,7 +551,7 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
         });
       }
 
-      // Send confirmation email
+      // Send confirmation email to customer
       fetch('/api/email/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -568,6 +568,27 @@ export default function CheckoutModal({ isOpen, onClose, onViewAccount }) {
           subDiscount:   finalSubDiscount,
         }),
       }).catch(err => console.warn('Order email failed:', err));
+
+      // Send admin notification email
+      fetch('/api/email/order-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: id,
+          firstName:     shipping.firstName,
+          lastName:      shipping.lastName,
+          email:         shipping.email,
+          items, shipping, subtotal,
+          shippingCost:  finalShippingCost,
+          tax:           finalTax,
+          total:         finalTotal,
+          promoCode:     promoCode?.code || null,
+          promoDiscount: finalPromoDiscount,
+          subDiscount:   finalSubDiscount,
+          isSubscription,
+          subInterval:   isSubscription ? subInterval : null,
+        }),
+      }).catch(err => console.warn('Admin notification failed:', err));
 
       // Save review token then schedule email
       const reviewToken = `${id}-${Math.random().toString(36).slice(2, 10)}`;

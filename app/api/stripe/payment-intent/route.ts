@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import nodemailer from 'nodemailer';
 
 export async function POST(req: NextRequest) {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -7,9 +8,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
   }
 
-  const stripe = new Stripe(secretKey, {
-    apiVersion: '2026-02-25.clover',
-  });
+  const stripe = new Stripe(secretKey);
+
   try {
     const { amount, shipping } = await req.json();
 
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Stripe uses cents
+      amount: Math.round(amount * 100),
       currency: 'usd',
       automatic_payment_methods: { enabled: true },
       metadata: {
