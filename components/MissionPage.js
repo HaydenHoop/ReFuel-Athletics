@@ -299,7 +299,7 @@ export default function MissionPage() {
         </div>
         {/* Text */}
         <div className="bg-white p-10 md:p-12 flex flex-col justify-center">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-gray-400 mb-6">The Founder</p>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-gray-400 mb-6">The Founders</p>
           <blockquote className="mb-6">
             <span className="text-5xl font-black text-gray-100 leading-none select-none font-serif"
               style={{ fontFamily: 'Georgia, serif' }}>"</span>
@@ -311,8 +311,8 @@ export default function MissionPage() {
           <p className="text-sm text-gray-400 font-medium">{closingAttribution}</p>
           <div className="mt-8 pt-8 border-t border-gray-100">
             <p className="text-sm text-gray-500 leading-relaxed">
-              Hayden built ReFuel Athletics out of frustration with the status quo — as a competitive endurance athlete,
-              he couldn't find a gel that respected both his performance demands and the trails he trained on.
+              We built ReFuel Athletics out of frustration with the status quo — as competitive endurance athletes,
+              we couldn't find a gel that respected both our performance demands and the trails we train on.
             </p>
           </div>
         </div>
