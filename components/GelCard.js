@@ -22,7 +22,7 @@ const FLAVORS = [
     id: 'passionfruit',
     label: 'Passionfruit',
     shortLabel: 'Passionfruit',
-    gradient: 'linear-gradient(135deg, #ea580c 0%, #fb923c 50%, #fed7aa 100%)',
+    gradient: 'linear-gradient(135deg, #c851c4 0%, #ecb723 50%, #941a6f 100%)',
     textColor: '#7c2d12',
   },
   {
