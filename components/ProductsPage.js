@@ -127,8 +127,8 @@ const PRODUCTS = [
     priceLabel: 'per flask',
     action: 'add',
     images: [
-      { src: '/images/Paul_image.jpeg', gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', label: 'Runner with flask strapped to race belt on trail' },
-      { src: '/images/Julien_drinking.jpeg', gradient: 'linear-gradient(135deg, #0f3460 0%, #533483 100%)', label: 'Close-up of twist-lock nozzle detail' },
+      { src: '/images/Julien_bending_down.jpeg', gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', label: 'Runner with flask strapped to race belt on trail' },
+      { src: '/images/Sports_Bra_Clip.jpeg', gradient: 'linear-gradient(135deg, #0f3460 0%, #533483 100%)', label: 'Close-up of twist-lock nozzle detail' },
       { src: '/images/Gel_Flask_Opening.jpeg', gradient: 'linear-gradient(135deg, #16213e 0%, #1a1a2e 100%)', label: 'Flask filled with gel, product flat lay' },
     ],
   },

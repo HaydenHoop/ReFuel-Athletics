@@ -34,10 +34,10 @@ const PRODUCT_DATA = {
       { quote: 'Fantastic Idea!', name: 'Grace Strongman', role: 'NCAA Double Podium Finisher, RMAC Course Record Holder' },
     ],
     images: [
-      { src: '/Sports_Bra_Clip.jpeg', gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', label: 'Runner with flask strapped to sports bra on trail' },
+      { src: '/images/Sports_Bra_Clip.jpeg', gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', label: 'Runner with flask strapped to sports bra on trail' },
       { src: '/images/Julien_bending_down.jpeg', gradient: 'linear-gradient(135deg, #0f3460 0%, #533483 100%)', label: 'Close-up of on runner' },
-      { src: null, gradient: 'linear-gradient(135deg, #16213e 0%, #0f3460 100%)', label: 'Flask filled with gel, product flat lay' },
-      { src: null, gradient: 'linear-gradient(135deg, #533483 0%, #1a1a2e 100%)', label: 'Flask on race belt during marathon' },
+      { src: '/images/Paul_image.jpeg', gradient: 'linear-gradient(135deg, #16213e 0%, #0f3460 100%)', label: 'Flask filled with gel, product flat lay' },
+      { src: '/images/Gel_Flask_Opening.jpeg', gradient: 'linear-gradient(135deg, #533483 0%, #1a1a2e 100%)', label: 'Flask on race belt during marathon' },
     ],
   },
   'custom-gel': {
@@ -71,10 +71,10 @@ const PRODUCT_DATA = {
       { quote: 'YOUR QUOTE HERE', name: 'Athlete Name', role: 'Cyclist' },
     ],
     images: [
-      { src: null, gradient: 'linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%)', label: 'Close-up of custom gel powder in labeled pouch' },
-      { src: null, gradient: 'linear-gradient(135deg, #40916c 0%, #52b788 100%)', label: 'Gel powder being scooped into flask' },
-      { src: null, gradient: 'linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%)', label: 'Labeled pouch showing formula breakdown' },
-      { src: null, gradient: 'linear-gradient(135deg, #52b788 0%, #2d6a4f 100%)', label: 'Multiple pouches of different flavors' },
+      { src: 'all gels', gradient: 'linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%)', label: 'Close-up of custom gel powder in labeled pouch' },
+      { src: '/images/Maple_jar_gel.jpeg', gradient: 'linear-gradient(135deg, #40916c 0%, #52b788 100%)', label: 'Gel powder being scooped into flask' },
+      { src: 'fill', gradient: 'linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%)', label: 'Labeled pouch showing formula breakdown' },
+      { src: '/images/Passionfruit_jar_gel.jpeg', gradient: 'linear-gradient(135deg, #52b788 0%, #2d6a4f 100%)', label: 'Multiple pouches of different flavors' },
     ],
   },
   'race-day': {
