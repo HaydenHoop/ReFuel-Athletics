@@ -127,9 +127,9 @@ const PRODUCTS = [
     priceLabel: 'per flask',
     action: 'add',
     images: [
-      { src: null, gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', label: 'Runner with flask strapped to race belt on trail' },
-      { src: null, gradient: 'linear-gradient(135deg, #0f3460 0%, #533483 100%)', label: 'Close-up of twist-lock nozzle detail' },
-      { src: null, gradient: 'linear-gradient(135deg, #16213e 0%, #1a1a2e 100%)', label: 'Flask filled with gel, product flat lay' },
+      { src: '/images/Paul_image.jpeg', gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', label: 'Runner with flask strapped to race belt on trail' },
+      { src: '/images/Julien_drinking.jpeg', gradient: 'linear-gradient(135deg, #0f3460 0%, #533483 100%)', label: 'Close-up of twist-lock nozzle detail' },
+      { src: '/Gel_Flask_Opening.jpeg', gradient: 'linear-gradient(135deg, #16213e 0%, #1a1a2e 100%)', label: 'Flask filled with gel, product flat lay' },
     ],
   },
   {
@@ -156,7 +156,7 @@ const PRODUCTS = [
     action: 'customize',
     images: [
       { src: null, gradient: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #b45309 100%)', label: 'Race day gel packet on running track' },
-      { src: 'Passionfruit_jar_gel.jpeg', gradient: 'linear-gradient(135deg, #b45309 0%, #d97706 100%)', label: 'Gel being consumed mid-race' },
+      { src: '/images/Passionfruit_jar_gel.jpeg', gradient: 'linear-gradient(135deg, #b45309 0%, #d97706 100%)', label: 'Gel being consumed mid-race' },
       { src: null, gradient: 'linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%)', label: 'Product lineup of all 5 flavors' },
     ],
   },
@@ -250,12 +250,16 @@ function ProductCard({ product, onViewProduct, onAddToCart, onCustomize, onOpenM
   );
 }
 
-function HeroBanner({ reverse, gradient, placeholderLabel, title, subtitle, cta, onCta }) {
+function HeroBanner({ reverse, gradient, imageSrc, placeholderLabel, title, subtitle, cta, onCta }) {
   return (
     <div className={`flex flex-col ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'} rounded-2xl overflow-hidden border border-gray-200 shadow-sm mb-6`}>
-      <div className="w-full md:w-2/3 min-h-[420px] md:min-h-[520px] flex items-end justify-center pb-4"
+      <div className="w-full md:w-2/3 min-h-[420px] md:min-h-[520px] flex items-end justify-center pb-4 relative overflow-hidden"
         style={{ background: gradient }}>
-        <p className="text-white/25 text-xs text-center px-6">{placeholderLabel}</p>
+        {imageSrc ? (
+          <img src={imageSrc} alt={placeholderLabel} className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <p className="text-white/25 text-xs text-center px-6 relative z-10">{placeholderLabel}</p>
+        )}
       </div>
       <div className="w-full md:w-1/3 p-10 flex flex-col justify-center bg-white">
         <h2 className="text-2xl font-extrabold text-gray-900 mb-3 leading-tight">{title}</h2>
@@ -916,6 +920,7 @@ export default function ProductsPage({ onGoToQuiz, onGoToRaceDayQuiz, onViewProd
 
         <HeroBanner
           gradient="linear-gradient(160deg, #0f172a 0%, #1e3a5f 50%, #0c4a6e 100%)"
+          imageSrc="/images/athlete_flask.jpeg"
           placeholderLabel="Athlete running with ReFuel gel flask strapped to race belt"
           title="The Reusable Gel Flask"
           subtitle="Stop tossing single-use foil after every race. Fill with your custom blend, twist shut, run. Dishwasher safe and race-belt ready."
@@ -925,6 +930,7 @@ export default function ProductsPage({ onGoToQuiz, onGoToRaceDayQuiz, onViewProd
         <HeroBanner
           reverse
           gradient="linear-gradient(160deg, #052e16 0%, #14532d 50%, #166534 100%)"
+          imageSrc="/images/gel_powder_pour.jpeg"
           placeholderLabel="Close-up of ReFuel custom gel powder being poured into flask"
           title="Custom Gel Powder"
           subtitle="Dial in your exact formula — carbs, electrolytes, caffeine, flavor. Mixed fresh to order and shipped within 24 hours."
