@@ -34,7 +34,7 @@ const PRODUCT_DATA = {
       { quote: 'Fantastic Idea!', name: 'Grace Strongman', role: 'NCAA Double Podium Finisher, RMAC Course Record Holder' },
     ],
     images: [
-      { src: null, gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', label: 'Runner with flask strapped to sports bra on trail' },
+      { src: '/Sports_Bra_Clip.jpeg', gradient: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', label: 'Runner with flask strapped to sports bra on trail' },
       { src: '/images/Julien_bending_down.jpeg', gradient: 'linear-gradient(135deg, #0f3460 0%, #533483 100%)', label: 'Close-up of on runner' },
       { src: null, gradient: 'linear-gradient(135deg, #16213e 0%, #0f3460 100%)', label: 'Flask filled with gel, product flat lay' },
       { src: null, gradient: 'linear-gradient(135deg, #533483 0%, #1a1a2e 100%)', label: 'Flask on race belt during marathon' },
