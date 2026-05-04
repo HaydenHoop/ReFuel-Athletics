@@ -73,7 +73,7 @@ const PRODUCT_DATA = {
     images: [
       { src: '/images/all_gel.jpeg', gradient: 'linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #40916c 100%)', label: 'Close-up of custom gel powder in labeled pouch' },
       { src: '/images/Maple_jar_gel.jpeg', gradient: 'linear-gradient(135deg, #40916c 0%, #52b788 100%)', label: 'Gel powder being scooped into flask' },
-      { src: '/images/POUR', gradient: 'linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%)', label: 'Labeled pouch showing formula breakdown' },
+      { src: '/images/POUR.jpeg', gradient: 'linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%)', label: 'Labeled pouch showing formula breakdown' },
       { src: '/images/Passionfruit_jar_gel.jpeg', gradient: 'linear-gradient(135deg, #52b788 0%, #2d6a4f 100%)', label: 'Multiple pouches of different flavors' },
     ],
   },

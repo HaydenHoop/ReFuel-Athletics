@@ -939,7 +939,7 @@ export default function ProductsPage({ onGoToQuiz, onGoToRaceDayQuiz, onViewProd
         <HeroBanner
           reverse
           gradient="linear-gradient(160deg, #052e16 0%, #14532d 50%, #166534 100%)"
-          imageSrc="/images/gel_powder_pour.jpeg"
+          imageSrc="/images/POUR.jpeg"
           placeholderLabel="Close-up of ReFuel custom gel powder being poured into flask"
           title="Custom Gel Powder"
           subtitle="Dial in your exact formula — carbs, electrolytes, caffeine, flavor. Mixed fresh to order and shipped within 24 hours."
