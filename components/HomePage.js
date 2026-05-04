@@ -16,7 +16,7 @@ const SLIDES = [
     gradient: 'linear-gradient(160deg, #0b2010 0%, #1e5c2a 40%, #061209 100%)',
   },
   {
-    src:   '/images/sasha_running_home',
+    src:   '/images/sasha_running_home.jpeg',
     label: 'Summit',
     hint:  'Mountain / alpine racing scene',
     gradient: 'linear-gradient(160deg, #12121e 0%, #2c3e6b 40%, #0a0a14 100%)',
