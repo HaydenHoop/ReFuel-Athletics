@@ -157,7 +157,7 @@ const PRODUCTS = [
     images: [
       { src: '/images/Tuff_image_jack.jpeg', gradient: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #b45309 100%)', label: 'Race day gel packet on running track' },
       { src: '/images/Passionfruit_jar_gel.jpeg', gradient: 'linear-gradient(135deg, #b45309 0%, #d97706 100%)', label: 'Gel being consumed mid-race' },
-      { src: null, gradient: 'linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%)', label: 'Product lineup of all 5 flavors' },
+      { src: '/images/julien_hayden_race.jpeg', gradient: 'linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%)', label: 'Product lineup of all 5 flavors' },
     ],
   },
 ];
@@ -250,12 +250,21 @@ function ProductCard({ product, onViewProduct, onAddToCart, onCustomize, onOpenM
   );
 }
 
-function HeroBanner({ reverse, gradient, imageSrc, placeholderLabel, title, subtitle, cta, onCta }) {
+function HeroBanner({ reverse, gradient, imageSrc, videoSrc, placeholderLabel, title, subtitle, cta, onCta }) {
   return (
     <div className={`flex flex-col ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'} rounded-2xl overflow-hidden border border-gray-200 shadow-sm mb-6`}>
       <div className="w-full md:w-2/3 min-h-[420px] md:min-h-[520px] flex items-end justify-center pb-4 relative overflow-hidden"
         style={{ background: gradient }}>
-        {imageSrc ? (
+        {videoSrc ? (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover">
+            <source src={videoSrc} type="video/mp4" />
+          </video>
+        ) : imageSrc ? (
           <img src={imageSrc} alt={placeholderLabel} className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <p className="text-white/25 text-xs text-center px-6 relative z-10">{placeholderLabel}</p>

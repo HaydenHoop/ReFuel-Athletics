@@ -4,19 +4,19 @@ import { useState, useEffect, useRef } from 'react';
 // ─── Slideshow config ─────────────────────────────────────────────────────────
 const SLIDES = [
   {
-    src:   '/images/.jpeg',
+    src:   '/images/jack_drinking_home.jpeg',
     label: 'Coast',
     hint:  'Coastal / beach running scene',
     gradient: 'linear-gradient(160deg, #0a2540 0%, #1a5276 40%, #0d1b2a 100%)',
   },
   {
-    src:   '/images/forest.jpg',
+    video:   '/images/Leg_Swings.mov',
     label: 'Trail',
     hint:  'Forest trail running scene',
     gradient: 'linear-gradient(160deg, #0b2010 0%, #1e5c2a 40%, #061209 100%)',
   },
   {
-    src:   '/images/mountain.jpeg',
+    src:   '/images/sasha_running_home',
     label: 'Summit',
     hint:  'Mountain / alpine racing scene',
     gradient: 'linear-gradient(160deg, #12121e 0%, #2c3e6b 40%, #0a0a14 100%)',
@@ -72,9 +72,19 @@ export default function HomePage({ onTabChange }) {
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative w-full min-h-screen flex items-center justify-center overflow-hidden bg-black">
 
-        {/* Slide background */}
         <div className={`absolute inset-0 transition-opacity duration-700 ${fading ? 'opacity-0' : 'opacity-100'}`}>
-          {slide.src ? (
+          {slide.video ? (
+            <video
+              key={slide.video}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover"
+              style={{ filter: 'brightness(0.75)' }}>
+              <source src={slide.video} type="video/mp4" />
+            </video>
+          ) : slide.src ? (
             <img src={slide.src} alt={slide.label}
               className="w-full h-full object-cover"
               onError={(e) => { e.target.style.display = 'none'; }}
