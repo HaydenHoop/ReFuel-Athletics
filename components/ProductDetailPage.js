@@ -108,8 +108,8 @@ const PRODUCT_DATA = {
     ],
     images: [
       { src: '/images/Tuff_image_jack.jpeg', gradient: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #b45309 100%)', label: 'Race day gel packet on running track' },
-      { src: null, gradient: 'linear-gradient(135deg, #b45309 0%, #d97706 100%)', label: 'Gel being consumed mid-race' },
-      { src: null, gradient: 'linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%)', label: 'Product lineup of all 5 flavors' },
+      { src: '/images/Passionfruit_jar_gel.jpeg', gradient: 'linear-gradient(135deg, #b45309 0%, #d97706 100%)', label: 'Gel being consumed mid-race' },
+      { src: '/images/Hayden_downhill.jpeg', gradient: 'linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%)', label: 'Product lineup of all 5 flavors' },
       { src: null, gradient: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', label: 'Close-up of ingredient label' },
     ],
   },
