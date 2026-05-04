@@ -7,7 +7,7 @@ const MAIN_QUESTIONS = [
   { id: 'sweat',     text: 'How would you describe your sweat rate?',                options: ['Light', 'Moderate', 'Heavy', 'Very Heavy / Very Salty'] },
   { id: 'gut',       text: 'How sensitive is your stomach during intense efforts?',  options: ['Iron Stomach', 'Normal', 'Somewhat Sensitive', 'Very Sensitive'] },
   { id: 'caffeine',  text: 'Do you want caffeine in your gel?',                      options: ['Yes — every dose', 'Caffeine only on race day', 'No thanks'] },
-  { id: 'flavor',    text: 'What flavor sounds best?',                               options: ['Tropical Mango', 'Strawberry Lemonade', 'Orange Citrus', 'Watermelon Mint', 'Neutral / Unflavored'] },
+  { id: 'flavor',    text: 'What flavor sounds best?',                               options: ['Tropical Mango', 'Lemon Raspberry', 'Passionfruit', 'Maple', 'Rootbeer'] },
   { id: 'thickness', text: 'What gel consistency do you prefer?',                   options: ['Thin & Liquid', 'Standard Gel', 'Thick & Concentrated'] },
 ];
 
