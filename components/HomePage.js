@@ -55,7 +55,15 @@ export default function HomePage({ onTabChange }) {
   const startTimer = () => {
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      setCurrent(c => (c + 1) % SLIDES.length);
+      setCurrent(c => {
+        const next = (c + 1) % SLIDES.length;
+        setFading(true);
+        setTimeout(() => {
+          setCurrent(next);
+          setFading(false);
+        }, 600);
+        return c; // hold current during fade
+      });
     }, 5000);
   };
 
@@ -80,6 +88,7 @@ export default function HomePage({ onTabChange }) {
               muted
               loop
               playsInline
+              preload="auto"
               className="w-full h-full object-cover"
               style={{ filter: 'brightness(0.75)' }}>
               <source src={slide.video} type="video/mp4" />
