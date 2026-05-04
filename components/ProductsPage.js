@@ -929,7 +929,7 @@ export default function ProductsPage({ onGoToQuiz, onGoToRaceDayQuiz, onViewProd
 
         <HeroBanner
           gradient="linear-gradient(160deg, #0f172a 0%, #1e3a5f 50%, #0c4a6e 100%)"
-          videoStrc="/images/Refuel.mp4"
+          videoSrc="/images/Refuel.mp4"
           placeholderLabel="Athlete running with ReFuel gel flask strapped to race belt"
           title="The Reusable Gel Flask"
           subtitle="Stop tossing single-use foil after every race. Fill with your custom blend, twist shut, run. Dishwasher safe and race-belt ready."
