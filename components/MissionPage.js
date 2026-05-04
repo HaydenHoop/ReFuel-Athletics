@@ -10,7 +10,7 @@ const MISSION_CONTENT = {
       body: `We are tired of the major gel companies selling overpriced single-use gels that end up on the trails or in a landfill. The plastic used for these gels is non-recyclable and harmful to animals that eat the sweet gel packets. Why should athletes who rely so much on nature be forced to destroy it in order to use the best products?`,
       media: {
         type: 'image',
-        src: null,
+        src: '/images/litter.jpeg',
         gradient: 'linear-gradient(135deg, #0a0a0a 0%, #1c1c1c 60%, #111 100%)',
         placeholder: 'Single-use gel wrappers discarded on a trail',
         caption: 'Millions of single-use gel packets end up in landfills each year.',
@@ -49,10 +49,10 @@ const MISSION_CONTENT = {
   ],
   founderMedia: {
     type: 'image',
-    src: null,
+    src: '/images/Hayden_downhill.jpeg',
     gradient: 'linear-gradient(160deg, #111 0%, #222 100%)',
-    placeholder: 'Hayden Hooper, Founder — racing at an endurance event',
-    caption: 'Hayden Hooper, competing at the 2023 Rocky Mountain 100.',
+    placeholder: 'Hayden Hooper, Founder — Racing down Lookout Mountain Road',
+    caption: 'Hayden Hooper running with Refuel Gel Flask',
   },
   closingQuote: `"There should be no compromise between breaking records and eliminating waste."`,
   closingAttribution: "— Hayden Hooper, Founder of ReFuel Athletics",
@@ -324,7 +324,7 @@ export default function MissionPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             {
-              type: 'image', src: null,
+              type: 'image', src: '/images/Jack_Drinking.jpeg',
               gradient: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)',
               placeholder: 'Athlete mid-race consuming a ReFuel gel',
               caption: 'Race day in the field.',
@@ -336,7 +336,7 @@ export default function MissionPage() {
               caption: 'Product development process.',
             },
             {
-              type: 'image', src: null,
+              type: 'image', src: '/images/Julien_bending_down.jpeg',
               gradient: 'linear-gradient(135deg, #0b1e0f 0%, #1a4a22 100%)',
               placeholder: 'ReFuel reusable packet on a trail with scenery',
               caption: 'Built for the places you train.',
