@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 // ─── Slideshow config ─────────────────────────────────────────────────────────
 const SLIDES = [
   {
-    src:   '/images/beach.jpg',
+    src:   '/images/Tuff_image_jack.jpeg',
     label: 'Coast',
     hint:  'Coastal / beach running scene',
     gradient: 'linear-gradient(160deg, #0a2540 0%, #1a5276 40%, #0d1b2a 100%)',
